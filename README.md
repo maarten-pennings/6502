@@ -50,7 +50,8 @@ How to wire the 6502? We need to
 #### Clock - oscillator - connect all inputs
 [This](http://lateblt.tripod.com/bit63.txt) was one of my sources for how to hook up pins.
 
-Of course we hook up GND (twice) and VCC.
+Of course we hook up GND (twice) and VCC. It seems wise to add some caps, close to the 6502, between GND and VCC. 
+I have a single 100nF (C1).
 
 All input pins (I made them yellow) need to be connected.
 All signal pins (RDY, IRQ, NMI, RES, SO) are low-active, so I hooked them via a pullup to VCC. My pull-ups are 2k2Ω.
