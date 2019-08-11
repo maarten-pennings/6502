@@ -99,7 +99,62 @@ Indeed, on the scope we see that in one division (200us) the signal is at 63% (1
 Some hook up an NE555 to reset-after-power-on, 
 see e.g. [Grappendorf](https://www.grappendorf.net/projects/6502-home-computer/reset-circuit.html).
 
+### Clock - oscillator - running
+The most easy way to see that the 6502 is running, is to monitor its address lines.
+Note that NOP is a one byte instruction (size-wise), but that it takes 2 cycles (time-wise).
 
+![NOP takes 2 cycles](NOP.png)
+
+At some moment in time address, let's say, 0x8000 is read. 
+Let's call this tick 0. The 6502 finds a NOP.
+Executing NOP takes tick 0 and 1.
+On clock tick 2 address 0x8001 is read, and the 6502 finds again a NOP.
+Executing the second NOP takes tick 2 and 3.
+And so on.
+
+  |  tick  | address | instruction |  A0  |
+  |:------:|:-------:|:-----------:|:----:|
+  |    0   | 0x8000  |  NOP (1st)  |   0  |
+  |    1   | 0x8000  |  NOP (1st)  |   0  |
+  |    2   | 0x8001  |  NOP (2nd)  |   1  |
+  |    3   | 0x8001  |  NOP (2nd)  |   1  |
+  |    4   | 0x8002  |  NOP (3rd)  |   0  |
+  |    5   | 0x8002  |  NOP (3rd)  |   0  |
+
+What we see from the tabel above is that two full periods of the clock (tick 0 and 1), A0 is low.
+And then the next two clock periods (tick 2 and 3) A0 is high.
+So it takes 4 clock periods for one A0 period.
+
+This is confirmed on the scope, the top shows A0, the botton the clock
+
+![Clock and A0](6502-osc-addr.jpg)
+
+Note that the clock runs at 1MHz.
+The following table shows the frequencies and periods of each address lines.
+
+  |  line  | freq (Hz) | period (us) | period (s) |
+  |:-------|----------:|------------:|-----------:|
+  | clock  | 1 000 000 |           1 |            |
+  |        |   500 000 |           2 |            |
+  | A0     |   250 000 |           4 |            |
+  | A1     |   125 000 |           8 |            |
+  | A2     |    62 500 |          16 |            |
+  | A3     |    31 250 |          32 |            |
+  | A4     |    15 625 |          64 |            |
+  | A5     |     7 813 |         128 |            |
+  | A6     |     3 906 |         256 |            |
+  | A7     |     1 953 |         512 |            |
+  | A8     |       977 |       1 024 |            |
+  | A9     |       488 |       2 048 |            |
+  | A10    |       244 |       4 096 |       0.00 |
+  | A11    |       122 |       8 192 |       0.01 |
+  | A12    |        61 |      16 384 |       0.02 |
+  | A13    |        31 |      32 768 |       0.03 |
+  | A14    |        15 |      65 536 |       0.07 |
+  | A15    |         8 |     131 072 |       0.13 |
+
+  
+A15 is already fast at 8Hz, so we fixed a LED to the last address line.
 
 
 
