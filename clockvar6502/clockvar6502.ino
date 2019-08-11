@@ -37,8 +37,8 @@ void wait_adjust() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Welcom to clockvar6502");
-  Serial.println("press + or - to speed up or slow dow");
+  Serial.println("Welcome to clockvar6502");
+  Serial.println("press + or - to speed up or slow down");
   
   pinMode(CLOCK, OUTPUT);
   digitalWrite(CLOCK, HIGH);
