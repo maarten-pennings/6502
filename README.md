@@ -54,26 +54,26 @@ Of course we hook up GND (twice) and VCC.
 
 All input pins (I made them yellow) need to be connected.
 All signal pins (RDY, IRQ, NMI, RES, SO) are low-active, so I hooked them via a pullup to VCC. My pull-ups are 2k2Ω.
-The φ0 is the clock-input, we hook it to the osccilator (see below).
+The φ0 is the clock-input, we hook it to the oscillator (see below).
 The RES not only has a pull-up, it is also hooked to the reset circuit (see below).
 
-A special category of input pins are de data pins.
+A special category of input pins are the data pins.
 I have wired them 1110 1010 or EA, which is the opcode for NOP.
 This means that the 6502 will always read NOP and will thus free run (spin around).
 See also [James Calvert](http://mysite.du.edu/~jcalvert/tech/6504.htm).
 
-There is one subtlety: also the reset vector reads as EAEA.
+There is one subtlety: also the reset vector (hardwired to FFFC and FFFD) will be read as EAEA.
 But once the 6502 jumps to that address, it reads NOPs.
 
 The NC pins and address pins are not connected.
 
 ![Board with 6502 and oscillator](6502-osc-board.jpg)
 
-#### Clock - oscillator - hook up a clock circuit
-As a clock circuit, we have a canned oscillator, and [MCO-1510A](http://mklec.com/pdf/MCO-1510A.pdf).
+#### Clock - oscillator - clock circuit
+As a clock circuit, we have a canned oscillator, an [MCO-1510A](http://mklec.com/pdf/MCO-1510A.pdf).
 Pin 1 is NC (not connected).
 Pin 7 (yes, not 2) is grounded.
-Pin 8 is the OUTPUT; the clock towards the 6502
+Pin 8 is the OUTPUT; the clock towards the 6502.
 Pin 14 is VCC.
 
 Once VCC and GND are connected, you can put a scope on OUTPUT.
@@ -86,15 +86,16 @@ Looks good.
 
 We also see overshoots at the rising edges.
 Although we are running only at 1MHz, it is wise to dampen them.
-That's why we added capacitor C2. You need a small one, like 680pF.
+That's why we added capacitor C2. You need a small one, like 680p,
+or even smaller, the corners of the pulses are now quite round.
 
 ![Output of the oscillator](6502-osc-wcap.jpg)
 
-#### Clock - oscillator - hook up a reset circuit
-We keep is simple. A push button pulls RES to ground.
-Added a cap to suppress (bounce) spikes and have a slow release.
+#### Clock - oscillator - reset circuit
+We keep it simple. A push button pulls RES to ground.
+We added a cap to supress (bounce) spikes and have a slow release.
 
-In case you are wondering C=100nF, R=2k2Ω, so rise time 𝜏 = R×C = 100n×2k2 = 220us.
+In case you are wondering C=100nF, R=2k2Ω, so the rise time 𝜏 = R×C = 100n×2k2 = 220us.
 Indeed, on the scope we see that in one division (200us) the signal is at 63% (1𝜏).
 
 ![Reset time](6502-osc-reset.jpg)
@@ -108,9 +109,9 @@ Note that NOP is a one byte instruction (size-wise), but that it takes 2 cycles 
 
 ![NOP takes 2 cycles](NOP.png)
 
-At some moment in time address, let's say, 0x8000 is read. 
-Let's call this tick 0. The 6502 finds a NOP.
-Executing NOP takes tick 0 and 1.
+At some moment in time, the address (just picking one) 0x8000 is read. 
+Let's call the tick at that moment tick 0. 
+The 6502 finds a NOP. Executing that NOP takes tick 0 and 1.
 On clock tick 2 address 0x8001 is read, and the 6502 finds again a NOP.
 Executing the second NOP takes tick 2 and 3.
 And so on.
@@ -156,33 +157,45 @@ The following table shows the frequencies and periods of each address lines.
   | A14    |        15 |      65 536 |       0.07 |
   | A15    |         8 |     131 072 |       0.13 |
 
-  
-A15 is already fast at 8Hz, so we fixed a LED to the last address line.
-LEDs on "lower" address lines flicker so fast the look "always on".
+A15 is pretty fast with its 8Hz, so we fixed a LED to this last address line.
+LEDs on "lower" address lines would flicker so fast that they would look "always on".
 
-Note that A15 is flickering after power on. When we keep the reset button pressed, it stops flickering.
-When releaseing the reset, the flickering start.
-Success, we have a 6502 in free run!
+Note that A15 start flickering immediately after power on. 
+When we keep the reset button pressed, it stops flickering.
+When releaseing the reset, the flickering starts.
+Success, we have a 6502 in "free run"!
 
 
 ### Clock - Nano
 Our second board will have an Arduino Nano as clock generator.
+Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano).
+Of course you get also get a [clone](https://www.aliexpress.com/item/32969876875.html).
 
-![Board with 6502 clocked by a Nano](6502-nano-board.png)
+![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
 
 #### Clock - Nano - wiring
 It is not much different from the previous board, but it offers much more flexibility.
 One nice feature is that you can power the 6502 from the Nano (connect 5V0 to VCC, and of course connect all GNDs).
-We need the same "stubs": RDY, IRQ, NMI, RES, SO are pulled-up. Have a button to pull-down RES.
+
+We need the same "stubs": RDY, IRQ, NMI, RES, SO are pulled-up. 
+Have a button to pull-down RES.
 Wire D0-D7 to 1110 1010 representing NOP.
 New is that φ0 is connected to D2 of the Nano.
-Since the Nano will be slower than the oscillator it is good to have LEDs on lower address lines too.
+Since the Nano will be slower than the oscillator it is good to have LEDs on lower address lines (e.g. A1, A5, A10) too.
 
 ![Schematic of 6502 with Nano](6502-nano-schem.png)
 
 #### Clock - Nano - software
 Find the sketch for the Nano in directory [clock6502](clock6502).
-We will see later that the Nano generates a clock of ~160kHz.
+It is a simple sketch that just flips the clock line:
+```
+void loop() {
+  digitalWrite(CLOCK, HIGH);
+  digitalWrite(CLOCK, LOW);
+}
+```
+
+We will see later that this generates a clock of ~160kHz.
 
 #### Clock - Nano - running
 ![Clock generated by the Nano](6502-nano.jpg)
@@ -190,7 +203,7 @@ We will see later that the Nano generates a clock of ~160kHz.
 The scope confirms the slow clock: 7 divisions (35us) is 5 periods, so one period is 7us.
 The clock frequency is thus 143kHz.
 
-Note that the Nano itself runs on 16MHz. This means that the `loop()` takes 100 Nano clock cycles to 
+Note that the Nano itself runs on 16MHz. This means that the `loop()` takes roughly 100 Nano clock cycles to 
 generate one 6502 clock cycle. So, a single `digitalWrite()` takes roughly 50 cycles.
 
 #### Clock - Nano - software II
@@ -200,15 +213,60 @@ This will shorten or lengthen the high part of the clock pulse.
 
 In my first version, this program did
 ```
-low, wait/2, high, wait/2
+go low, wait*0.5, go high, wait*0.5
 ```
 but I changed this to
 ```
-low, no-wait, high, wait
+go low, wait*0.0, go high, wait*1.0
 ```
 because the 6502 stops working when the low time is too long.
 
-With the current program the Nano can vary the clock from 100kHz to 0.06Hz.
+With the current program the Nano can vary the clock from 100kHz to 0.06Hz:
+
+```
+Welcome to clockvar6502
+press + or - to speed up or slow down
+10+4096us, 243.55Hz
+10+2048us, 485.91Hz
+10+1024us, 967.12Hz
+10+512us, 1915.71Hz
+10+256us, 3759.40Hz
+10+128us, 7246.38Hz
+10+64us, 13513.51Hz
+10+32us, 23809.52Hz
+10+16us, 38461.54Hz
+10+8us, 55555.55Hz
+10+4us, 71428.57Hz
+10+2us, 83333.34Hz
+10+1us, 90909.10Hz
+10+2us, 83333.34Hz
+10+4us, 71428.57Hz
+10+8us, 55555.55Hz
+10+16us, 38461.54Hz
+10+32us, 23809.52Hz
+10+64us, 13513.51Hz
+10+128us, 7246.38Hz
+10+256us, 3759.40Hz
+10+512us, 1915.71Hz
+10+1024us, 967.12Hz
+10+2048us, 485.91Hz
+10+4096us, 243.55Hz
+10+8192us, 121.92Hz
+10+16384us, 61.00Hz
+10+32768us, 30.51Hz
+10+65536us, 15.26Hz
+10+131072us, 7.63Hz
+10+262144us, 3.81Hz
+10+524288us, 1.91Hz
+10+1048576us, 0.95Hz
+10+2097152us, 0.48Hz
+10+4194304us, 0.24Hz
+10+8388608us, 0.12Hz
+10+16777216us, 0.06Hz
+10+16777216us, 0.06Hz
+10+16777216us, 0.06Hz
+10+16777216us, 0.06Hz
+```
 
 
 
