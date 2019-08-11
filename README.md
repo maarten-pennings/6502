@@ -19,7 +19,7 @@ although the logo and time stamp look different from the first. It does work, bu
 
 ## Clock
 We need a clock, a source of pulses. There are several options. Remember that a classical 6502 runs at 1MHz. 
-It seems that not match variantion is allowed in the clock frequency for the old variants.
+It seems that not much variation is allowed in the clock frequency for the old variants.
 It seems that the new variants allow much more variation. 
 Anyhow, I don't need speed (that only causes all kinds of electrical problems).
 I prefer slow, as in hand clocked, to see in detail what is going on.
@@ -27,7 +27,7 @@ I prefer slow, as in hand clocked, to see in detail what is going on.
 The hardest way is to [build](https://www.grappendorf.net/projects/6502-home-computer/clock-generation.html) your own oscillator 
 based on a [crystal](https://www.aliexpress.com/item/32869213435.html). Tried. Works. Do not recommend.
 
-Much easier is to get a ["can"](https://www.aliexpress.com/item/32887401548.html) that presumably contains the crystal
+Much easier is to get a "[can](https://www.aliexpress.com/item/32887401548.html)" that presumably contains the crystal
 and the passives around it. The 1MHz versions are a bit hard to get. Works well. Do recommend.
 
 The third way is more the software approach: use an Arduino Nano to generate the clock. This is especially nice at the start 
@@ -169,7 +169,7 @@ Success, we have a 6502 in "free run"!
 ### Clock - Nano
 Our second board will have an Arduino Nano as clock generator.
 Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano).
-Of course you get also get a [clone](https://www.aliexpress.com/item/32969876875.html).
+Of course you can also get a [clone](https://www.aliexpress.com/item/32969876875.html).
 
 ![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
 
@@ -270,6 +270,11 @@ press + or - to speed up or slow down
 
 I especially like the 0.06Hz: 16 seconds per clock is really nice slow stepping.
 Would it be possible to single step with button presses?
+
+The above test was done with 650 variant 2 (Rockwell). 
+Variant 1 (original MOS) still works at 7.63hz, but stops at 3.81Hz.
+Variant 3 (new MOS?) still wokrs at 0.48Hz, but stops at 0.24Hz or 0.12Hz.
+
 
 
 
