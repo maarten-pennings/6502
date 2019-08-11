@@ -41,7 +41,7 @@ I skip this approach for now.
 For the first board, we need to
  - ensure that all input pins are connected
  - hook up a clock circuit
- - hook up an reset circuit
+ - hook up a reset circuit
  - ensure we can see that the 6502 is running
 
 ![Schematic](6502-osc-schem.png)
@@ -52,7 +52,7 @@ For the first board, we need to
 Of course we hook up GND (twice) and VCC.
 
 All input pins (I made them yellow) need to be connected.
-All signal pins (RDY, IRQ, NMI, RES, SO) are low-active, so I hooked them via a pullup to VCC. My pull-ups are 2k2 ohm.
+All signal pins (RDY, IRQ, NMI, RES, SO) are low-active, so I hooked them via a pullup to VCC. My pull-ups are 2k2Ω.
 The φ0 is the clock-input, we hook it to the osccilator (see below).
 The RES not only has a pull-up, it is also hooked to the reset circuit (see below).
 
@@ -74,13 +74,33 @@ Pin 8 is the OUTPUT; the clock towards the 6502
 Pin 14 is VCC.
 
 Once VCC and GND are connected, you can put a scope on OUTPUT.
+
 ![Output of the oscillator](6502-osc-nocap.jpg)
 
-On the scope we see overshoots at the edges of the pulses.
+Vertically, we have 2.5 divisions of each 2V, so a swing of 5V.
+Horizontally, we have two divisions per pulse so 1000ns or 1us or 1Mhz.
+Looks good.
+
+We also see overshoots at the rising edges.
 Although we are running only at 1MHz, it is wise to dampen them.
 That's why we added capacitor C2. You need a small one, like 680pF.
 
 ![Output of the oscillator](6502-osc-wcap.jpg)
+
+### Clock - oscillator - hook up a reset circuit
+We keep is simple. A push button pulls RES to ground.
+Added a cap to suppress (bounce) spikes and have a slow release.
+
+In case you are wondering C=100nF, R=2k2Ω, so rise time 𝜏 = R×C = 100n×2k2 = 220us.
+Indeed, on the scope we see that in one division (200us) the signal is at 63% (1𝜏).
+
+![Reset time](6502-osc-reset.jpg)
+
+Some hook up an NE555 to reset-after-power-on, 
+see e.g. [Grappendorf](https://www.grappendorf.net/projects/6502-home-computer/reset-circuit.html).
+
+
+
 
 
 
