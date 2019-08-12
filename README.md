@@ -28,7 +28,7 @@ The [first chapter](1clock) discusses three options:
 ## Emulation
 The Nano as clock source was not only easy, it also gave me a nice idea.
 When the Nano controls the clock, it also knows when to sample the data lines. We then have a spy that can follow each step.
-That appeared to work very well, as discussed in the [second chapter](!2emulation).
+That appeared to work very well, as discussed in the [second chapter](2emulation).
 Would it even be possible to sample the data lines? Yes! and spoof the data lines? Yes!
 The Nano now emulates a memory.
 
