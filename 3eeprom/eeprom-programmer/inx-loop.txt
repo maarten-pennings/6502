@@ -1,0 +1,9 @@
+write 7fc 00 07
+
+write 700 *
+A2 00    #        LDX #$00 
+         # LOOP:           
+86 00    #        STX *$00 
+E8       #        INX      
+4C 02 07 #        JMP LOOP:
+*
