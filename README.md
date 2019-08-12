@@ -35,11 +35,38 @@ of your project. You might already have it laying around. You do not need to ord
 you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
 
 ### Clock - crystal
-I skip this approach for now.
+We can build our own oscillator using a crystal.
+
+![Crystal](crystal.jpg)
+
+We also need two inverters, two resistors and a capacitor. 
+A third inverter is the buffer amplifier for the output signal, the 1MHz clock.
+For the inverters we take the 7404 IC  ("hex inverters").
+This is the complete schematics
+
+![Oscilator circuit](6502-crystal-schem.png)
+
+My resulting board
+
+![Oscilator board](6502-crystal-board.jpg)
+
+If we put the scope on the clock output, we get a 1MHz pulse (1 period is 2 divisions or 500 ns).
+
+![Oscilator board](6502-crystal-output.jpg)
+
+Note that especially the falling edges have overshoot. Adding a small cap would help.
+In some cases, my oscillator locks in on 2.6MHz instead of 1 MHz. I do not know why.
+
+Anyhow, this circuit can be bought as one component, a canned oscillator. 
+
+![Oscilator](oscillator.jpg)
+
+In the next section we use such a can.
+
 
 ### Clock - oscillator
-Our first board will have a canned oscilator. 
-How to wire the 6502? We need to
+Our first 6502 board will have a canned oscilator. 
+How to wire it? We need to
  - ensure that all input pins are connected
  - hook up the clock circuit
  - hook up a reset circuit
