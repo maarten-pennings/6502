@@ -1,24 +1,8 @@
-# 6502
-Trying to build a 6502 based computer
+# Clock
+Trying to build a 6502 based computer. 
 
-## Introduction
-I took up the challenge of building my own computer. I grew up with the [Commodore 64](https://en.wikipedia.org/wiki/Commodore_64).
-It has a [6502](https://en.wikipedia.org/wiki/MOS_Technology_6502) processor. This processor was also used by Apple, Atari, Nintendo. 
-It is simple, still available, and many hobbiest before me [documented](http://6502.org/) their projects. So 6502 it was.
-
-## Hardware
-I started by ordering hardware. I already had breadboards, jumper wires, resistors, LEDs. The main (first) purchase was the 6502 itself.
-The [first](https://www.aliexpress.com/item/32929325067.html) variant (left) I got was an original one from MOS from 1985. 
-I had problems resetting it (on power up it runs, but after a reset if freezes - is it broken?). 
-Then I [learned](http://wilsonminesco.com/NMOS-CMOSdif/) that the old ones are NMOS, and that there are new CMOS versions. 
-I got my [second](https://www.aliexpress.com/item/32990938828.html) variant (middle), which works well. 
-A [third](https://www.aliexpress.com/item/32841499879.html) variant (right) seems to be an old one again, 
-although the logo and time stamp look different from the first. It does work, but it gets warmer than the variant 2.
-
-[![6502 variant 1](6502-1s.jpg)](6502-1.png) [![6502 variant 2](6502-2s.jpg)](6502-2.png) [![6502 variant 3](6502-3s.jpg)](6502-3.png)
-
-## Clock
-We need a clock, a source of pulses. There are several options. Remember that a classical 6502 runs at 1MHz. 
+We need a clock, a source of pulses. There are several options. 
+Remember that a classical 6502 runs at 1MHz. 
 It seems that not much variation is allowed in the clock frequency for the old variants.
 It seems that the new variants allow much more variation. 
 Anyhow, I don't need speed (that only causes all kinds of electrical problems).
@@ -34,7 +18,7 @@ The third way is more the software approach: use an Arduino Nano to generate the
 of your project. You might already have it laying around. You do not need to order any other special components, and it gives 
 you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
 
-### Clock - crystal
+## Clock - crystal
 We can build our own oscillator using a crystal.
 
 ![Crystal](crystal.jpg)
@@ -64,7 +48,7 @@ Anyhow, this circuit can be bought as one component, a canned oscillator.
 In the next section we use such a can.
 
 
-### Clock - oscillator
+## Clock - oscillator
 Our first 6502 board will have a canned oscilator. 
 How to wire it? We need to
  - ensure that all input pins are connected
@@ -74,7 +58,7 @@ How to wire it? We need to
 
 ![Schematic of 6502 with oscillator](6502-osc-schem.png)
 
-#### Clock - oscillator - connect all inputs
+### Clock - oscillator - connect all inputs
 [This](http://lateblt.tripod.com/bit63.txt) was one of my sources for how to hook up pins.
 
 Of course we hook up GND (twice) and VCC. It seems wise to add some caps, close to the 6502, between GND and VCC. 
@@ -97,7 +81,7 @@ The NC pins and address pins are not connected.
 
 ![Board with 6502 and oscillator](6502-osc-board.jpg)
 
-#### Clock - oscillator - clock circuit
+### Clock - oscillator - clock circuit
 As a clock circuit, we have a canned oscillator, an [MCO-1510A](http://mklec.com/pdf/MCO-1510A.pdf).
 Pin 1 is NC (not connected).
 Pin 7 (yes, not 2) is grounded.
@@ -119,7 +103,7 @@ or even smaller, the corners of the pulses are now quite round.
 
 ![Output of the oscillator](6502-osc-wcap.jpg)
 
-#### Clock - oscillator - reset circuit
+### Clock - oscillator - reset circuit
 We keep it simple. A push button pulls RES to ground.
 We added a cap to supress (bounce) spikes and have a slow release.
 
@@ -131,7 +115,7 @@ Indeed, on the scope we see that in one division (200us) the signal is at 63% (1
 Some hook up an NE555 to reset-after-power-on, 
 see e.g. [Grappendorf](https://www.grappendorf.net/projects/6502-home-computer/reset-circuit.html).
 
-#### Clock - oscillator - running
+### Clock - oscillator - running
 The most easy way to see that the 6502 is running, is to monitor its address lines.
 Note that NOP is a one byte instruction (size-wise), but that it takes 2 cycles (time-wise).
 
@@ -194,14 +178,14 @@ When releaseing the reset, the flickering starts.
 Success, we have a 6502 in "free run"!
 
 
-### Clock - Nano
+## Clock - Nano
 Our second board will have an Arduino Nano as clock generator.
 Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano).
 Of course you can also get a [clone](https://www.aliexpress.com/item/32969876875.html).
 
 ![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
 
-#### Clock - Nano - wiring
+### Clock - Nano - wiring
 It is not much different from the previous board, but it offers much more flexibility.
 One nice feature is that you can power the 6502 from the Nano (connect 5V0 to VCC, and of course connect all GNDs).
 
@@ -213,7 +197,7 @@ Since the Nano will be slower than the oscillator it is good to have LEDs on low
 
 ![Schematic of 6502 with Nano](6502-nano-schem.png)
 
-#### Clock - Nano - software
+### Clock - Nano - software
 Find the sketch for the Nano in directory [clock6502](clock6502).
 It is a simple sketch that just flips the clock line:
 ```
@@ -225,7 +209,7 @@ void loop() {
 
 We will see later that this generates a clock of ~160kHz.
 
-#### Clock - Nano - running
+### Clock - Nano - running
 ![Clock generated by the Nano](6502-nano.jpg)
 
 The scope confirms the slow clock: 7 divisions (35us) is 5 periods, so one period is 7us.
@@ -234,7 +218,7 @@ The clock frequency is thus 143kHz, let me be so bold to treat it as 160kHz.
 Note that the Nano itself runs on 16MHz. This means that the `loop()` takes roughly 100 (16M/160k) Nano clock cycles to 
 generate one 6502 clock cycle. So, a single `digitalWrite()` takes roughly 50 cycles.
 
-#### Clock - Nano - software II
+### Clock - Nano - software II
 Find a second sketch for the Nano in directory [clockvar6502](clockvar6502).
 This sketch allows you to enter + or - in the Serial port (the arduino terminal requires a press on the ENTER key as well).
 This will shorten or lengthen the high part of the clock pulse.
