@@ -14,7 +14,7 @@ Can't we snoop the data bus as well? Can't we write the data bus? Yes, yes, and 
 
 The [first step](https://github.com/maarten-pennings/6502/tree/master/1clock#clock---nano---wiring) was taken in the 
 previous chapter. We used a Nano a clock source for the 6502. Address lines are dangling, data lines are hardwired to EA 
-(the code of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 running at 160kHz.
+(the opcode of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 running at 160kHz.
 
 ## Addres bus
 
@@ -96,9 +96,9 @@ on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3):
                  // 6502 reset released
    409908us 3586 // first internal administrative operation of 6502
    411440us 3586 // second internal operation
-   412968us 01ee // push of return address (PCH) on stack, decrement stack pointer (note S is 01EE)
-   414500us 01ed // push the return address (PCL) on stack, decrement stack pointer (note S is 01ED)
-   416028us 01ec // push the processor status register (P) on stack, decrement stack pointer (note S is 01EC)
+   412968us 01ee // push of return address (PCH) on stack, decrement stack pointer (note S is EE)
+   414500us 01ed // push the return address (PCL) on stack, decrement stack pointer (note S is ED)
+   416028us 01ec // push the processor status register (P) on stack, decrement stack pointer (note S is EC)
    417556us fffc // get PCL from reset vector (FFFC)
    419088us fffd // get PCH from reset vector (FFFD)
    420620us eaea // Jump to reset vector. Executes first instruction (NOP)
@@ -112,11 +112,105 @@ Some notes
  - All three interrupts, NMI with vector at FFFA, RESET with vector at FFFC and IRQ with vector at FFFE
    have the same 7-clock interrupt sequence. 
  - One exception: for RESET the three pushes are fake: the 6502 issues a read to the memory instead of a write
- - The stackpointer (S) has a random value after reset, in the above run it happened to be 1EE.
+ - The stackpointer (S) has a random value after reset, in the above run it happened to be EE,
+   and the stack page is hardwired to 00.
  - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
  - I can not explain why the first NOP only takes one clock
  - The time between the lines (one clock period) is about 1500us, so we are running at 0.7kHz
- 
+
+
+## Jump loop
+
+The previous experiment is a success: we see the address lines increment nicely (in steps of two)
+and also the reset behavior is as documented. Still, it would be nice to have a more realistic program;
+a series of NOPs is not very convincing.
+
+However, without a memory to store our program, we are limited in our possibilities.
+There is one way out: go old style. Write a program in hardware.
+
+I got the idea from [James Calvert's tight loop](http://mysite.du.edu/~jcalvert/tech/6504.htm).
+We make some logic that emulates an 8 byte memory.
+We NOR together the first three address lines to create the v-signal.
+The v-signal is bound to D2, D3 and D6, the other (D0, D1, D4, D5 and D7) are bound to GND.
+So, the data bus is 0b 0v00 vv00. This means that 
+ - if v=0 then D = 0b 0000 0000 = 0x00
+ - if v=1 then D = 0b 0100 1100 = 0x4C
+
+  | address (hex) | address (bin) | v-signal| data |
+  |:-------------:|:-------------:|:-------:|:----:|
+  |     ...       |       ...     |         |      |
+  |     FFFC      |    ... 100    |    0    |  00  | 
+  |     FFFD      |    ... 101    |    0    |  00  |
+  |     FFFE      |    ... 110    |    0    |  00  |
+  |     FFFF      |    ... 111    |    0    |  00  |
+  |     0000      |    ... 000    |    1    |  4C  |
+  |     0001      |    ... 001    |    0    |  00  |
+  |     0002      |    ... 010    |    0    |  00  |
+  |     0003      |    ... 011    |    0    |  00  |
+  |     ...       |       ...     |         |      |
+
+In other words, at FFFC, the 6502 reads the start address 00 00, and at 0000 the 6502 reads 4C 00 00.
+Note that 4C 00 00 means JMP 0000, since 4C is the opcode for JMP abs.
+
+This the schematic
+
+![nano-jmp.png](nano-jmp.png)
+
+Here is a photo of my board. Note the triple OR and the hex inverter chips on the right.
+The three blue wires coming in (from A0, A1, A2) and the blue wire going out (to D2, d3 and D6).
+
+![nano-jmp.jpg](nano-jmp.jpg)
+
+Let's make a trace again (nano reset down, 6502 reset down, nano reset up, wait for output, 6502 reset up).
+This is the trace (I manually added the `<- reset released`) 
+
+```
+
+Welcome to AddrSpy6502
+      400us 0001
+      820us 0001
+     1248us 0001
+     1676us 0001
+     2928us 0001
+        ...
+   263028us 0001
+   264560us 0001
+   266088us 0001
+   267620us 0001
+   269148us 0001
+   270680us 0001 <- reset released
+   272208us 0001
+   273740us 01fa
+   275268us 01f9
+   276800us 01f8
+   278328us fffc
+   279856us fffd
+   281388us 0000
+   282920us 0001
+   284448us 0002
+   285980us 0000
+   287508us 0001
+   289040us 0002
+   290568us 0000
+   292100us 0001
+   293628us 0002
+   295160us 0000
+   296688us 0001
+   298220us 0002
+```
+
+Some notes
+ - At 270680us the reset is released. 
+ - We see the two internal administrative operations
+ - We see the (fake) push of PCH, PCL, P.
+   The stack pointer S now starts at FA, so pushes to 01FA, 01F9 and 01F8.
+ - We see the reset vector load (FFFC, FFFD)
+ - We see the load of 0000 (this confirms that FFFC and FFFD read 0000)
+ - We see the load of 0001, 0002
+ - We see the load of 0000 again, which hints that JMP 0000 was executed
+
+
+
 ---
 
 To be written (2019 aug 12)
