@@ -1,4 +1,4 @@
-// Clock6502
+// Clock6502: use a Nano to generate a clock for the 6502
 // Connect D2 of Nano to phi0 of 6502. Also connect the grounds.
 // You can even supply the 6502 from the 5V0 of the Nano.
 
