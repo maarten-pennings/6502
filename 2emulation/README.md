@@ -26,7 +26,7 @@ Does the Nano have enough inputs? It seems to have D0..D13 so 14 lines.
 However D0 and D1 [double](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png) 
 as RXD and TXD and we need to to send the trace to the PC (over USB). That's 12 lines, and 16 would be nice.
 But from the [pinout](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png)
-we see that analogue pins A0..A5 also have a double role, they can act as digital pins. That's 6 more digital pins.
+we see that analog pins A0..A5 also have a double role, they can act as digital pins. That's 6 more digital pins.
 
 In other words, we have 18 digital pins. We need 1 for clock and 16 far the address lines. Even one spare.
 
@@ -225,10 +225,10 @@ We are going to connect Nano D3 to R6502 /nW so that we can trace if the 6502 di
 We are going to use Nano D4..D11 for 6502 D0..D7. Full data trace.
 We are going to use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
 
-There is one problem: Nano A6 and A7 are analogue only.
+There is one problem: Nano A6 and A7 are analog only.
 We cannot use `digitalRead()` on those pins.
-We can however read them in an analogue fashion by using `analogRead()` and comparing the result with half the 
-maximum analogue readout: 1024/2.
+We can however read them in an analog fashion by using `analogRead()` and comparing the result with half the 
+maximum analog readout: 1024/2.
 The drawback is that `analogRead()` is [slow](https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/):
 
 > On ATmega based boards (UNO, Nano, Mini, Mega), it takes about 100 microseconds (0.0001 s) 
@@ -271,11 +271,18 @@ Welcome to AddrDataSpy6502
    314096us 0001 1 00
    316032us 0002 1 00
 ```
----
 
-To be written (2019 aug 15)
 
- - Now also capture data (use JMP prog)
+ - One clock is now about 2000us (0.5kHz)
+
+
+
+## Emulate ROM
+
  - Now also emulate rom (loop with inx and stx)
  - Add irq and isr
+
+## Emulate RAM
+
  - Now also support data write
+
