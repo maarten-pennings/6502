@@ -30,9 +30,13 @@ we see that analogue pins A0..A5 also have a double role, they can act as digita
 
 In other words, we have 18 digital pins. We need 1 for clock and 16 far the address lines. Even one spare.
 
-![Nano spys on the address lines](nano-address.png)
+![Schematic of Nano spying on the address lines](nano-address.png)
 
-The program on the Nano, [AddrSpy6502](addrspy652) is simple. The `loop()` pulses the clock, 
+The schematics above look like this on my breadboard:
+
+![Board of Nano spying on the address lines](nano-address.jpg)
+
+The program on the Nano, [AddrSpy6502](addrspy6502) is simple. The `loop()` pulses the clock, 
 reads all 16 address lines and prints them out in hex (with a time stamp).
 
 This is the experiment I did.
@@ -111,12 +115,12 @@ Some notes
  - The stackpointer (S) has a random value after reset, in the above run it happened to be 1EE.
  - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
  - I can not explain why the first NOP only takes one clock
-
+ - The time between the lines (one clock period) is about 1500us, so we are running at 0.7kHz
+ 
 ---
 
 To be written (2019 aug 12)
 
- - Clock, capture 16bit addresses, NOPs, reset
  - NOPs becomes JMP in hw (or)
  - Now also capture data (use JMP prog)
  - Now also emulate rom (loop with inx and stx)
