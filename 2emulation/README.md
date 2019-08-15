@@ -161,11 +161,11 @@ The three blue wires coming in (from A0, A1, A2) and the blue wire going out (to
 
 ![nano-jmp.jpg](nano-jmp.jpg)
 
-Let's make a trace again (nano reset down, 6502 reset down, nano reset up, wait for output, 6502 reset up).
+With the same [sketch](addrspy6502) as the prevos experiment, let's make a trace again.
+That is nano reset down, 6502 reset down, nano reset up, wait for output, 6502 reset up.
 This is the trace (I manually added the `<- reset released`) 
 
 ```
-
 Welcome to AddrSpy6502
       400us 0001
       820us 0001
@@ -205,17 +205,76 @@ Some notes
  - We see the (fake) push of PCH, PCL, P.
    The stack pointer S now starts at FA, so pushes to 01FA, 01F9 and 01F8.
  - We see the reset vector load (FFFC, FFFD)
- - We see the load of 0000 (this confirms that FFFC and FFFD read 0000)
+ - We see the load of 0000 (this confirms that FFFC and FFFD read 00 00)
  - We see the load of 0001, 0002
  - We see the load of 0000 again, which hints that JMP 0000 was executed
+ - One clock is still about 1500us (0.7kHz)
 
 
+## Data bus
 
+In the notes on the previos experiment, we have "load of 0000 again, which hints that JMP 0000 was executed".
+Wouldn't it be nice if we could not only see the address bus, but also the data bus?
+We can, but we loose detals on the address bus.
+
+Recall that we have Nano D2 for the 6502 ϕ0 (clock), and Nano D4..D13 plus A0..A5 for 6502 A0..A15.
+This leaves Nano D3, A6 and A7 free.
+Let's redesign.
+
+We are going to connect Nano D3 to R6502 /nW so that we can trace if the 6502 did a read or a write on the data bus.
+We are going to use Nano D4..D11 for 6502 D0..D7. Full data trace.
+We are going to use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
+
+There is one problem: Nano A6 and A7 are analogue only.
+We cannot use `digitalRead()` on those pins.
+We can however read them in an analogue fashion by using `analogRead()` and comparing the result with half the 
+maximum analogue readout: 1024/2.
+The drawback is that `analogRead()` is [slow](https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/):
+
+> On ATmega based boards (UNO, Nano, Mini, Mega), it takes about 100 microseconds (0.0001 s) 
+> to read an analog input, so the maximum reading rate is about 10,000 times a second.
+
+We prefer to use 10 bits, because this means we have 4 pages:
+ - page 0, for well, zero-page addressing of the 6502
+ - page 1, for the stack
+ - page 2, for the code
+ - page 3, for the interrupt vectors
+
+
+```
+Welcome to AddrDataSpy6502
+      752us 0002 1 00
+     1516us 0002 1 00
+     2284us 0002 1 00
+     3256us 0002 1 00
+     5208us 0002 1 00
+        ...
+   276952us 0002 1 00
+   278896us 0002 1 00
+   280848us 0002 1 00
+   282816us 0002 1 00
+   284752us 0002 1 00
+   286736us 0002 1 00
+   288680us 0002 1 00
+   290624us 01fd 1 00
+   292592us 01fc 1 00
+   294536us 01fb 1 00
+   296488us 03fc 1 00
+   298456us 03fd 1 00
+   300400us 0000 1 4c
+   302368us 0001 1 00
+   304320us 0002 1 00
+   306264us 0000 1 4c
+   308240us 0001 1 00
+   310176us 0002 1 00
+   312128us 0000 1 4c
+   314096us 0001 1 00
+   316032us 0002 1 00
+```
 ---
 
-To be written (2019 aug 12)
+To be written (2019 aug 15)
 
- - NOPs becomes JMP in hw (or)
  - Now also capture data (use JMP prog)
  - Now also emulate rom (loop with inx and stx)
  - Add irq and isr
