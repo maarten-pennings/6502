@@ -291,8 +291,11 @@ Welcome to AddrDataSpy6502
    316032us 0002 1 00
 ```
 
-
- - One clock is now about 2000us (0.5kHz)
+ - The leading nibble of the address is always 0 (we only capture 10 bits).
+ - The second nible of the address bus is only 0, 1, 2 or 3 (we only capture 2 bits in this nibble).
+ - All bytes are read as 00 except at location 0000, there it reads 4C.
+ - The three push instructions (01fd, 01fc, 01fb) are indeed fake: they read instead of write (R/nW flag is 1).
+ - One clock is now about 2000us (0.5kHz).
 
 
 
