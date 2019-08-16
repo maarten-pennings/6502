@@ -10,14 +10,14 @@ reads EA and EA) and then progressing to EAEB, EAEC? Would be nice if we can che
 Then I had a nice idea: the Nano controls the clock, so it knows when the address bus is valid, can't the Nano snoop it?
 Can't we snoop (read) the data bus as well? Can't we _write_ the data bus? Yes, yes, and yes.
 
-## Clock
+## 1 Clock
 
 The [first step](https://github.com/maarten-pennings/6502/tree/master/1clock#clock---nano---wiring) was taken in the 
 previous chapter. We used a Nano as a clock source for the 6502. The address lines are dangling, the data lines are hardwired to EA 
 (the opcode of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 
 "free" running at 160kHz.
 
-## Address bus
+## 2 Address bus
 
 With the first experiment, we believe the 6502 is executing NOPs. Can we check that? Can we check that it starts at EAEA 
 (the reset vector at FFFC and FFFD also reads EA and EA) and then progressing to EAEB, EAEC? Can we spy the address bus?
@@ -39,7 +39,7 @@ The schematics above looks like this on my breadboard:
 
 The program on the Nano, [AddrSpy6502](addrspy6502) is simple. The `loop()` pulses the clock, 
 reads all 16 address lines and prints them out in hex (with a time stamp).
-```
+```cpp
 void loop() {
   // Send clock low
   digitalWrite(PIN_CLOCK, LOW);
@@ -140,7 +140,7 @@ Some notes
  - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
 
 
-## Jump loop
+## 3 Jump loop
 
 The previous experiment is a success: we see the address lines increment nicely (in steps of two)
 and also the reset behavior is as documented. Still, it would be nice to have a more realistic program;
@@ -230,21 +230,28 @@ Some notes
  - One clock is still about 1500us (0.7kHz)
 
 
-## Data bus
+## 4 Data bus
 
-In the notes on the previous experiment, we have "load of 0000 again, which hints that JMP 0000 was executed".
-Wouldn't it be nice if we could not only see the address bus, but also the data bus?
+In the notes on the previous experiment, we have " load of 0000 (this confirms that FFFC and FFFD read 00 00)".
+Wouldn't it be nice if we could not only see the _address_ bus, but also the _data_ bus?
 We can, but we loose details on the address bus.
 
 Recall that we have Nano D2 for the 6502 ϕ0 (clock), and Nano D4..D13 plus A0..A5 for 6502 A0..A15.
 This leaves Nano D3, A6 and A7 free.
 Let's redesign.
 
+ - Leave Nano D2 to R6502 ϕ0 (clock).
  - Connect Nano D3 to R6502 R/nW so that we can trace if the 6502 did a read or a write on the data bus.
  - Use Nano D4..D11 for 6502 data bus D0..D7. Full data trace.
  - Use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
 
-There is one problem: Nano A6 and A7 are analog only.
+![Nano with clock and data](nano-data.png)
+
+Find below my breadboard version. I still have the JMP loop circuit (3-input OR with inverter) on the right.
+
+![Nano with clock and data](nano-data.jpg)
+
+There is one problem with this wiring: Nano A6 and A7 are analog only.
 We cannot use `digitalRead()` on those pins.
 We can however read them in an analog fashion by using `analogRead()` and comparing the result with half the 
 maximum analog readout: 1024/2.
@@ -253,49 +260,83 @@ The drawback is that `analogRead()` is [slow](https://www.arduino.cc/reference/e
 > On ATmega based boards (UNO, Nano, Mini, Mega), it takes about 100 microseconds (0.0001 s) 
 > to read an analog input, so the maximum reading rate is about 10,000 times a second.
 
-We prefer to use 10 bits, because this means we have 4 pages (an 6502 page is 256 bytes):
+We prefer to use 10 bits, because this means we have 4 pages (a 6502 page is 256 bytes):
  - page 0, for well, zero-page addressing of the 6502
- - page 1, for the stack
+ - page 1, for the stack (hardwired on page 1 by the 6502)
  - page 2, for the code
- - page 3, for the interrupt vectors
+ - page 3, for the interrupt vectors (hardwired to FFFx by the 6502)
 
+The result is a memory map with 4 pages of each 256 bytes (so 1kB in total), that is mirrored 64 times:
+![Memory map](nano-data-mem.png)
+
+The associated [Arduino sketch](addrdataspy6502), now also captures R/nW and the data pins:
+
+```cpp
+void loop() {
+  // Send clock low
+  digitalWrite(PIN_CLOCK, LOW);
+  // Send clock high again
+  digitalWrite(PIN_CLOCK, HIGH);
+  
+  // Read address bus
+  uint16_t addr=0 ;
+  addr += digitalRead(PIN_ADDR_0) << 0;
+  addr += digitalRead(PIN_ADDR_1) << 1;
+  ...
+
+  // Read R/nW
+  uint16_t rnw=0 ;
+  rnw += digitalRead(PIN_RnW) << 0;
+  
+  // Read data bus
+  uint16_t data=0 ;
+  data += digitalRead(PIN_DATA_0) << 0;
+  data += digitalRead(PIN_DATA_1) << 1;
+  ...
+
+  // Print address bus
+  char buf[32];
+  sprintf(buf,"%9ldus %03x %0x %02x",micros(),addr,rnw,data);
+  Serial.println(buf);
+}
+```
+
+The results are great. We made a trace in the same way as before
 
 ```
 Welcome to AddrDataSpy6502
-      752us 0002 1 00
-     1516us 0002 1 00
-     2284us 0002 1 00
-     3256us 0002 1 00
-     5208us 0002 1 00
+      752us 002 1 00
+     1504us 002 1 00
+     2264us 002 1 00
+     3024us 002 1 00
         ...
-   276952us 0002 1 00
-   278896us 0002 1 00
-   280848us 0002 1 00
-   282816us 0002 1 00
-   284752us 0002 1 00
-   286736us 0002 1 00
-   288680us 0002 1 00
-   290624us 01fd 1 00
-   292592us 01fc 1 00
-   294536us 01fb 1 00
-   296488us 03fc 1 00
-   298456us 03fd 1 00
-   300400us 0000 1 4c
-   302368us 0001 1 00
-   304320us 0002 1 00
-   306264us 0000 1 4c
-   308240us 0001 1 00
-   310176us 0002 1 00
-   312128us 0000 1 4c
-   314096us 0001 1 00
-   316032us 0002 1 00
+   376984us 002 1 00
+   378856us 002 1 00 <- reset
+   380736us 002 1 00
+   382608us 1fd 1 00
+   384464us 1fc 1 00
+   386336us 1fb 1 00
+   388216us 3fc 1 00
+   390088us 3fd 1 00
+   391944us 000 1 4c
+   393816us 001 1 00
+   395696us 002 1 00
+   397568us 000 1 4c
+   399424us 001 1 00
+   401296us 002 1 00
+   403176us 000 1 4c
+   405048us 001 1 00
+   406904us 002 1 00
 ```
 
- - The leading nibble of the address is always 0 (we only capture 10 bits).
- - The second nible of the address bus is only 0, 1, 2 or 3 (we only capture 2 bits in this nibble).
- - All bytes are read as 00 except at location 0000, there it reads 4C.
+ - Since we capture only 10 address lines, we only print 3 nibbles
+ - The first nible of the address bus is only 0, 1, 2 or 3 (we only capture 2 bits in this nibble).
+ - Since we still have the JMP loop wired, all bytes are read as 00 except at location 0000, there it reads 4C.
  - The three push instructions (01fd, 01fc, 01fb) are indeed fake: they read instead of write (R/nW flag is 1).
- - One clock is now about 2000us (0.5kHz).
+ - One clock is now just below 2000us (0.5kHz).
+
+
+## 5 Interrupt (IRQ)
 
 
 
