@@ -415,8 +415,151 @@ Success, interrupt fully matches our model.
 
 ## Emulate ROM
 
- - Now also emulate rom (loop with inx and stx)
- - Add irq and isr
+The Nano now controls the clock of the 6502, but it also reads the (well, most) address lines.
+And it is connected to the data lines. What prevents us from writing a sketch that has a 1k array (remember we
+capture 10 address lines which can address 1024 locations), indexes that array with the received address, 
+retrieves the byte at that location, and write the value of that byte to the data lines?
+
+Nothing. This basically implements a ROM.
+
+Since the Nano now writes to the data lines in addition to the 6502, there is a risky situation: if one 
+writes 0 and the other writes 1, we get a short circuit. So I decided to add (1k) resistors on the line.
+A 5V short then causes a 5mA current. Hope both chips can handle that. A 10k was too high for me.
+
+![The Nano as ROM (schematics)](nano-rom.png)
+
+I used an extra breadboard to insert the 1ks in the data lines:
+
+![The Nano as ROM (breadboard)](nano-rom.jpg)
+
+The associated [Arduino sketch](rom6502), now looks up the data and outputs it::
+
+```cpp
+void loop() {
+  // Send clock low
+  digitalWrite(PIN_CLOCK, LOW);
+  
+  // Read address bus
+  uint16_t addr=0 ;
+  addr += digitalRead(PIN_ADDR_0) << 0;
+  addr += digitalRead(PIN_ADDR_1) << 1;
+  ...
+  
+  // Read R/nW
+  uint16_t rnw=0 ;
+  rnw += digitalRead(PIN_RnW) << 0;
+  
+  // Write data bus
+  uint16_t data= mem[addr] ;
+  digitalWrite(PIN_DATA_0, (data&(1<<0))?HIGH:LOW );
+  digitalWrite(PIN_DATA_1, (data&(1<<1))?HIGH:LOW );
+  ...
+  
+  // Send clock high again
+  digitalWrite(PIN_CLOCK, HIGH);
+
+  // Print address bus
+  char buf[32];
+  sprintf(buf,"%9ldus %03x %0x %02x",micros(),addr,rnw,data);
+  Serial.println(buf);
+}
+```
+
+The `mem` array that is used to lookup `data` is a byte array that it initialized by calling `load()` from `setup()`.
+```cpp
+uint8_t mem[1024];
+
+void load() {
+  // Fill entire memory with NOP
+  for(int i=0; i<1024; i++ ) mem[i]=0xEA; // NOP
+
+  // * = $0200
+  mem[0x3fc]= 0x00;
+  mem[0x3fd]= 0x02;
+  // 0200        LDX #$00        A2 00
+  mem[0x200]= 0xA2;
+  mem[0x201]= 0x00;
+  // 0202 LOOP:  INX             E8
+  mem[0x202]= 0xE8;
+  // 0203        STX $0155       8E 55 01
+  mem[0x203]= 0x8E;
+  mem[0x204]= 0x55;
+  mem[0x205]= 0x01;
+  // 0206        JMP LOOP:       4C 02 02
+  mem[0x206]= 0x4C;
+  mem[0x207]= 0x02;
+  mem[0x208]= 0x02;
+}
+```
+
+In case you wonder where this code is coming from.
+I wrote a simple assembler program that constanty increments X and stores it on location 155.
+This is the assembler code
+
+```asm
+* = $0200
+0200        LDX #$00        A2 00
+0202 LOOP:  INX             E8
+0203        STX $0155       8E 55 01
+0206        JMP LOOP:       4C 02 02
+```
+
+I used the [on-line 6502 compiler](https://www.masswerk.at/6502/assembler.html) to get the opcodes.
+Do not forget the reset vector at 3fc and 3fd.
+
+This is the trace
+
+```
+Welcome to Rom6502
+     1132us 206 1 4c
+     1892us 206 1 4c
+     2660us 206 1 4c
+        ...
+   312740us 206 1 4c
+   314588us 206 1 4c
+   316468us 206 1 4c
+   318348us 206 1 4c <- reset
+   320220us 206 1 4c
+   322068us 1ab 1 ea
+   323940us 1aa 1 ea
+   325828us 1a9 1 ea
+   327708us 3fc 1 00
+   329548us 3fd 1 02
+   331420us 200 1 a2 <- main
+   333308us 201 1 00
+   335180us 202 1 e8 <- loop
+   337028us 203 1 8e
+   338900us 203 1 8e
+   340788us 204 1 55
+   342660us 205 1 01
+   344508us 155 0 ea <- save X
+   346380us 206 1 4c
+   348268us 207 1 02
+   350140us 208 1 02
+   351988us 202 1 e8 <- loop
+   353860us 203 1 8e
+   355748us 203 1 8e
+   357620us 204 1 55
+   359476us 205 1 01
+   361340us 155 0 ea <- save X
+   363228us 206 1 4c
+   365100us 207 1 02
+   366948us 208 1 02
+   368820us 202 1 e8 <- loop
+   370716us 203 1 8e
+```
+
+- After reset, the 6502 jump to main at 200
+- It executes the `LDX #$00` and then moves to the start of the loop
+- It increments X `INX` or `E8`
+- Then executes the store of X to 155 `STX $0155` which takes four ticks `8E 8E 55 01`
+- The 6502 attempts to write (R/nW is 0) but our "ROM' does ignore this. 
+  It actually writes `EA` causing the dreaded short circuit (but save due to the resistors)
+- Finally there is the jump to loop `JMP 0202`
+
+--
+
+make ISR
 
 ## Emulate RAM
 
