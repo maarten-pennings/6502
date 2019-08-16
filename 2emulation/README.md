@@ -558,11 +558,25 @@ Welcome to Rom6502
   The Nano actually writes `EA` causing the dreaded short circuit (but save due to the resistors).
 - Finally there is the jump to loop `JMP 0202`.
 
---
-
-make ISR
 
 ## Emulate RAM
 
  - Now also support data write
 
+Need RAM for this, because of the stack
+
+```
+  // https://www.masswerk.at/6502/assembler.html
+  // *=$300
+  // INC *$44
+  // RTI
+
+  // * = $0300
+  mem[0x3fe]= 0x00;
+  mem[0x3ff]= 0x03;
+  // 0300        INC *$44        E6 44
+  mem[0x300]= 0xE6;
+  mem[0x301]= 0x44;
+  // 0302        RTI             40
+  mem[0x302]= 0x40;
+```
