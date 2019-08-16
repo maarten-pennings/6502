@@ -20,7 +20,7 @@ although the logo and time stamp look different from the first. It does work, bu
 ## Clock
 We need a clock, a source of pulses. 
 
-The [first chapter](1clock) discusses three options:
+The [first chapter](1clock/README.md) discusses three options:
  - The hardest way is to build your own oscillator based on a crystal, but I would recommend the second option.
  - Much easier is to get that circuit as a whole in a "can".
  - Since many have it available: you could also use an Arduino Nano as clock source.
@@ -28,7 +28,7 @@ The [first chapter](1clock) discusses three options:
 ## Emulation
 The Nano as clock source was not only easy, it also gave me a nice idea.
 When the Nano controls the clock, it also knows when to sample the data lines. We then have a spy that can follow each step.
-That appeared to work very well, as discussed in the [second chapter](2emulation).
+That appeared to work very well, as discussed in the [second chapter](2emulation/README.md).
 Would it even be possible to sample the data lines? Yes! and spoof the data lines? Yes!
 The Nano now emulates a memory.
 
@@ -39,7 +39,7 @@ But we add a real memory.
 RAM would have advantages (can hold code and data), but I don't know how to fill that with code.
 So let's first add EEPROM.
 
-The [third chapter](3eeprom) explains how to hook up an EEPROM to the 6502. 
+The [third chapter](3eeprom/README.md) explains how to hook up an EEPROM to the 6502. 
 And as a side project we develop an EEPROM programmer so that the 6502 has some code to work on
 (and the Nano has some code to spy on).
 
