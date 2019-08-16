@@ -267,6 +267,7 @@ We prefer to use 10 bits, because this means we have 4 pages (a 6502 page is 256
  - page 3, for the interrupt vectors (hardwired to FFFx by the 6502)
 
 The result is a memory map with 4 pages of each 256 bytes (so 1kB in total), that is mirrored 64 times:
+
 ![Memory map](nano-data-mem.png)
 
 The associated [Arduino sketch](addrdataspy6502), now also captures R/nW and the data pins:
@@ -339,7 +340,7 @@ Welcome to AddrDataSpy6502
 ## 5 Interrupt (IRQ)
 
 We should be able to generate an interrupt.
-The IRQ line on the board is pulled up, so if we add a wire and toch the GND signal, we should get a interrupt.
+The IRQ line on the board is pulled up, so if we add a wire and toch the GND signal, we should get an interrupt.
 
 > Intermezzo on interrupts
 
@@ -428,11 +429,11 @@ A 5V short then causes a 5mA current. Hope both chips can handle that. A 10k was
 
 ![The Nano as ROM (schematics)](nano-rom.png)
 
-I used an extra breadboard to insert the 1ks in the data lines:
+I used an extra breadboard to insert the 1k resistors in the data lines:
 
 ![The Nano as ROM (breadboard)](nano-rom.jpg)
 
-The associated [Arduino sketch](rom6502), now looks up the data and outputs it:
+The associated [Arduino sketch](rom6502), now looks up the data and writes it on the data lines:
 
 ```cpp
 void loop() {
@@ -494,7 +495,8 @@ void load() {
 ```
 
 In case you wonder where this code is coming from.
-I wrote a simple assembler program that constantly increments X and stores it on location 155.
+I wrote a simple assembler program that constantly increments X and stores it on location 155
+(not wise, since that is in the stack area, but hey, we use no stack).
 This is the assembler code
 
 ```asm
