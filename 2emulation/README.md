@@ -338,6 +338,78 @@ Welcome to AddrDataSpy6502
 
 ## 5 Interrupt (IRQ)
 
+We should be able to generate an interrupt.
+The IRQ line on the board is pulled up, so if we add a wire and toch the GND signal, we should get a interrupt.
+
+> Intermezzo on interrupts
+
+> The 6502 IRQ line is not edge but level sensitive: a low level causes an interrupt.
+> In practice this is what happens. The IRQ line is sampled at the end of each instruction.
+
+> If the line is high, no interrupt request is pending and the 6502 runs the next instruction
+> till completion before it samples the IRQ line again.
+
+> If the IRQ line is low, an interrupt request is pending. If the I flag ("IRQ-disable") in 
+> the program status word is 1, the interrupt is not taken; the 6502 runs the next instruction
+> till completion before it samples the IRQ line (and I flag) again.
+
+> If the IRQ line is low and the I flag is 0, the interrupt sequence will be initiated. 
+> The Program Counter (PC, high and low byte) and the Processor Status Register (P) are pushed 
+> onto the stack and the IRQ-disable flag (I) is set to a 1 disabling further interrupts.
+> The Program Counter Low is loaded from FFFE and the Program Counter High from FFFF.
+> The vector at FFFE/FFFF point to the start of the so-called Interrupt Service Routine (ISR),
+> which thus now starts to execute.
+
+> The ISR should do the proper action for the interrupt, but also some administrative work:
+> it should signal the device that caused the pulled the IRQ line low, that it is serviced, so 
+> that it will let the IRQ line go high again. The ISR ends with a Return from Interrupt (RTI) 
+> instruction. This restores the I flag (back to 0) and a new interrupts can be handled. 
+> If the (I) flag is cleared in the ISR, nested interrupts can occur. 
+
+So, if we pull IRQ low for a moment, the ISR will be executed (by default I=0).
+This means the the main program (the JMP loop at 0000) is pre-empted and that the 6502 
+will start executing ... 0000 (because FFFE and FFFF both store 00). 
+
+We will see the interrupt sequnce!
+Another interesting observation is that our ISR never returns.
+It loops back to 0000 and never executes a RTI.
+So after the first interrupt I=1, and no new interrupts will be serviced.
+That is, till the next RESET.
+
+Let's give it a try. Lets run the [tracer](addrdataspy6502) and short circuit
+the nIRQ line of the 6502 with GND for a brief moment.
+
+```
+ 62728408us 000 1 4c
+ 62730280us 001 1 00
+ 62732136us 002 1 00
+ 62734016us 000 1 4c
+ 62735888us 001 1 00
+ 62737744us 002 1 00 <- IRQ
+ 62739632us 000 1 4c
+ 62741496us 000 1 4c
+ 62743368us 100 0 00
+ 62745224us 1ff 0 00
+ 62747096us 1fe 0 00
+ 62748976us 3fe 1 00
+ 62750848us 3ff 1 00
+ 62752704us 000 1 4c
+ 62754576us 001 1 00
+ 62756456us 002 1 00
+ 62758328us 000 1 4c
+ 62760184us 001 1 00
+ 62762056us 002 1 00
+```
+
+ - We see the 6502 looping JMP 0000 call
+ - At 62737744us there is the IRQ (you can not see that from this line)
+ - We have the two internal cycles
+ - We have the 3 pushes (to 100, 1ff, 1fe)
+ - We have a read from 3fe (FFFE) and 3ff (FFFF), remember we capture only 12 address bits 
+ - Next, the program counter switches to 000
+ - A second touch of the wire did not cause a second FFFE/FFFF lookup.
+
+Success, interrupt fully matches our model.
 
 
 ## Emulate ROM
