@@ -432,7 +432,7 @@ I used an extra breadboard to insert the 1ks in the data lines:
 
 ![The Nano as ROM (breadboard)](nano-rom.jpg)
 
-The associated [Arduino sketch](rom6502), now looks up the data and outputs it::
+The associated [Arduino sketch](rom6502), now looks up the data and outputs it:
 
 ```cpp
 void loop() {
@@ -465,7 +465,8 @@ void loop() {
 }
 ```
 
-The `mem` array that is used to lookup `data` is a byte array that it initialized by calling `load()` from `setup()`.
+The `mem` array that is used to lookup `data` is a byte array that is initialized by calling `load()` from `setup()`.
+
 ```cpp
 uint8_t mem[1024];
 
@@ -493,7 +494,7 @@ void load() {
 ```
 
 In case you wonder where this code is coming from.
-I wrote a simple assembler program that constanty increments X and stores it on location 155.
+I wrote a simple assembler program that constantly increments X and stores it on location 155.
 This is the assembler code
 
 ```asm
@@ -549,13 +550,13 @@ Welcome to Rom6502
    370716us 203 1 8e
 ```
 
-- After reset, the 6502 jump to main at 200
-- It executes the `LDX #$00` and then moves to the start of the loop
-- It increments X `INX` or `E8`
+- After reset, the 6502 jumps to main at 200.
+- It executes the `LDX #$00` and then moves to the start of the loop.
+- In the loop, it increments X `INX` or `E8`
 - Then executes the store of X to 155 `STX $0155` which takes four ticks `8E 8E 55 01`
-- The 6502 attempts to write (R/nW is 0) but our "ROM' does ignore this. 
-  It actually writes `EA` causing the dreaded short circuit (but save due to the resistors)
-- Finally there is the jump to loop `JMP 0202`
+- The 6502 attempts to write (R/nW is 0) but our "ROM" (the Nano) does ignore this. 
+  The Nano actually writes `EA` causing the dreaded short circuit (but save due to the resistors).
+- Finally there is the jump to loop `JMP 0202`.
 
 --
 
