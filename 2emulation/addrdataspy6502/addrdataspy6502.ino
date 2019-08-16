@@ -1,11 +1,12 @@
 // AddrDataSpy6502: use a Nano to generate a clock for the 6502 and to spy its address and data lines.
-// Connect the grounds. Aupply the 6502 from the 5V0 of the Nano.
-// Connect D2 of Nano to phi0 of 6502, and D3 of nano to R/nW of 6502.
+
+// Connect the grounds. Supply the 6502 from the 5V0 of the Nano.
+// Connect D2 of Nano to phi0 of 6502, and D3 of Nano to R/nW of 6502.
 // Connect data lines D0..D7 of the 6502 to Nano D4..D11.
 // Connect address lines A0..A9 of 6502 to Nano D12, D13, A0..A7.
 
-#define PIN_CLOCK  2
-#define PIN_RnW    3
+#define PIN_CLOCK    2
+#define PIN_RnW      3
 
 #define PIN_DATA_0   4
 #define PIN_DATA_1   5
@@ -75,7 +76,7 @@ void loop() {
   addr +=            (VAL_ADDR_8) << 8;
   addr +=            (VAL_ADDR_9) << 9;
 
-  // Read rnw
+  // Read R/nW
   uint16_t rnw=0 ;
   rnw += digitalRead(PIN_RnW) << 0;
   
@@ -92,7 +93,6 @@ void loop() {
 
   // Print address bus
   char buf[32];
-  sprintf(buf,"%9ldus %04x %0x %02x",micros(),addr,rnw,data);
+  sprintf(buf,"%9ldus %03x %0x %02x",micros(),addr,rnw,data);
   Serial.println(buf);
-
 }
