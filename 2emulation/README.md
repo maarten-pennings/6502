@@ -405,6 +405,7 @@ the nIRQ line of the 6502 with GND for a brief moment.
  - At 62737744us there is the IRQ (you can not see that from this line)
  - We have the two internal cycles
  - We have the 3 pushes (to 100, 1ff, 1fe)
+ - Note the the 3 pushes indeed have the R/nW flag being 0 (first time, jaayy)
  - We have a read from 3fe (FFFE) and 3ff (FFFF), remember we capture only 12 address bits 
  - Next, the program counter switches to 000
  - A second touch of the wire did not cause a second FFFE/FFFF lookup.
