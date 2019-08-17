@@ -232,7 +232,7 @@ Some notes
 
 ## 4 Data bus
 
-In the notes on the previous experiment, we have " load of 0000 (this confirms that FFFC and FFFD read 00 00)".
+In the notes on the previous experiment, we have "load of 0000 (this confirms that FFFC and FFFD read 00 00)".
 Wouldn't it be nice if we could not only see the _address_ bus, but also the _data_ bus?
 We can, but we loose details on the address bus.
 
@@ -340,32 +340,32 @@ Welcome to AddrDataSpy6502
 ## 5 Interrupt (IRQ)
 
 We should be able to generate an interrupt.
-The IRQ line on the board is pulled up, so if we add a wire and toch the GND signal, we should get an interrupt.
+The IRQ line on the board is pulled up, so if we add a wire and touch the GND signal, we should get an interrupt.
 
 > Intermezzo on interrupts
-
+>
 > The 6502 IRQ line is not edge but level sensitive: a low level causes an interrupt.
-> In practice this is what happens. The IRQ line is sampled at the end of each instruction.
-
+> The IRQ line is sampled at the end of each instruction.
+>
 > If the line is high, no interrupt request is pending and the 6502 runs the next instruction
 > till completion before it samples the IRQ line again.
-
+>
 > If the IRQ line is low, an interrupt request is pending. If the I flag ("IRQ-disable") in 
 > the program status word is 1, the interrupt is not taken; the 6502 runs the next instruction
 > till completion before it samples the IRQ line (and I flag) again.
-
+>
 > If the IRQ line is low and the I flag is 0, the interrupt sequence will be initiated. 
 > The Program Counter (PC, high and low byte) and the Processor Status Word (PSW) are pushed 
 > onto the stack and the IRQ-disable flag (I) is set to a 1 disabling further interrupts.
 > The Program Counter Low is loaded from FFFE and the Program Counter High from FFFF.
-> The vector at FFFE/FFFF point to the start of the so-called Interrupt Service Routine (ISR),
+> The vector at FFFE/FFFF points to the start of the so-called Interrupt Service Routine (ISR),
 > which thus now starts to execute.
-
+>
 > The ISR should do the proper action for the interrupt, but also some administrative work:
-> it should signal the device that caused the pulled the IRQ line low, that it is serviced, so 
+> it should signal the device that pull the IRQ line low, that it is serviced, so 
 > that it will let the IRQ line go high again. The ISR ends with a Return from Interrupt (RTI) 
 > instruction. This restores the I flag (back to 0) and a new interrupts can be handled. 
-> If the (I) flag is cleared in the ISR, nested interrupts can occur. 
+> If the (I) flag is cleared inside the ISR routine, nested interrupts can occur. 
 
 So, if we pull IRQ low for a moment, the ISR will be executed (by default I=0).
 This means the the main program (the JMP loop at 0000) is pre-empted and that the 6502 
@@ -410,6 +410,7 @@ the nIRQ line of the 6502 with GND for a brief moment.
  - We have a read from 3fe (FFFE) and 3ff (FFFF), remember we capture only 12 address bits 
  - Next, the program counter switches to 000
  - A second touch of the wire did not cause a second FFFE/FFFF lookup.
+ - I think we were lucky: we started with I=0. I now believe that a reset does not guarantee this.
 
 Success, interrupt fully matches our model.
 
@@ -664,9 +665,11 @@ The I flag is cleared by the `RTI` instruction, since that pops the old PSW regi
 Now that we have RAM emulation, the push of PSW is operational, so the pop of PSW is effective.
 
 The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with one exception.
-The `mem` array is loaded with a different firmware for the 6502.
+The `mem` array is loaded with a different firmware for the 6502. And we have added a `mem_dump()` routine that is 
+called from `setup()` so that we can check the `mem` array is correctly initialized.
 
-There are two functions. The `main` gets executed from the reset vector
+There are two functions `main` and `isr`. 
+The `main` gets executed from the reset vector.
 
 ```asm
 * = $0200
@@ -680,12 +683,14 @@ There are two functions. The `main` gets executed from the reset vector
 0209        JMP LOOP        4C 07 02
 ```
 
-In its `loop` it increments zero page location 33.
+Function `main` has a `loop` that increments zero page location 33.
 
-Before the loop, it initializes zero page location 33 to 00.
-It has two other initliazations: zero page location 44 to 00, and enabling of interupts (`CLI`).
+Before the loop, `main` initializes zero page location 33 to 00.
+It has two other initliazations: zeroing page location 44 to 00, and enabling of interupts (`CLI`).
 The enabling of interrupts allows the second function `isr` to be called when grounding the nIRQ line.
 The `isr` increments zero page location 44.
+
+The function `isr` gets executed from the irq vector.
 
 ```asm
 * = $0300
@@ -694,10 +699,10 @@ The `isr` increments zero page location 44.
 0302        RTI             40
 ```
 
-All these opcode bytes are written to the `mem[]` array in `mem_load()`.
-Do not forget that `mem-load(0` should initialize mem locations fffc/fffd (reset) and fffe/ffff (irq).
+The opcodes of both functions are written to the `mem[]` array in `mem_load()`.
+Do not forget that `mem_load()` should initialize `mem[]` locations fffc/fffd (reset) and fffe/ffff (irq) as well.
 
-This is the annotated trace.
+This is the annotated trace (note the `mem` dump at the top).
 
 ```
 Welcome to RamIrq6502
