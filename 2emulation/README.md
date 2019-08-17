@@ -119,7 +119,7 @@ on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3):
    411440us 3586 // second internal operation
    412968us 01ee // push of return address (PCH) on stack, decrement stack pointer (note S is EE)
    414500us 01ed // push the return address (PCL) on stack, decrement stack pointer (note S is ED)
-   416028us 01ec // push the processor status register (P) on stack, decrement stack pointer (note S is EC)
+   416028us 01ec // push the processor status word (PSW) on stack, decrement stack pointer (note S is EC)
    417556us fffc // get PCL from reset vector (FFFC), presumably reads EA
    419088us fffd // get PCH from reset vector (FFFD), presumably reads EA
    420620us eaea // Jump to reset vector, indeed EAEA. Executes first instruction (NOP)
@@ -221,7 +221,7 @@ Welcome to AddrSpy6502
 Some notes
  - Before 270680us the reset is released (can't see that from the trace). 
  - We see the two internal administrative operations
- - We see the (fake) push of PCH, PCL, P.
+ - We see the (fake) push of PCH, PCL, PSW.
    The stack pointer S now starts at FA, so pushes to 01FA, 01F9 and 01F8.
  - We see the reset vector load (FFFC, FFFD)
  - We see the load of 0000 (this confirms that FFFC and FFFD read 00 00)
@@ -355,7 +355,7 @@ The IRQ line on the board is pulled up, so if we add a wire and toch the GND sig
 > till completion before it samples the IRQ line (and I flag) again.
 
 > If the IRQ line is low and the I flag is 0, the interrupt sequence will be initiated. 
-> The Program Counter (PC, high and low byte) and the Processor Status Register (P) are pushed 
+> The Program Counter (PC, high and low byte) and the Processor Status Word (PSW) are pushed 
 > onto the stack and the IRQ-disable flag (I) is set to a 1 disabling further interrupts.
 > The Program Counter Low is loaded from FFFE and the Program Counter High from FFFF.
 > The vector at FFFE/FFFF point to the start of the so-called Interrupt Service Routine (ISR),
@@ -414,7 +414,7 @@ the nIRQ line of the 6502 with GND for a brief moment.
 Success, interrupt fully matches our model.
 
 
-## Emulate ROM
+## 6 Emulate ROM
 
 The Nano now controls the clock of the 6502, but it also reads the (well, most) address lines.
 And it is connected to the data lines. What prevents us from writing a sketch that has a 1k array (remember we
@@ -561,7 +561,7 @@ Welcome to Rom6502
 - Finally there is the jump to loop `JMP 0202`.
 
 
-## Emulate RAM
+## 7 Emulate RAM
 
 In the previous section we implemented a ROM: the 6502 could _read_ bytes.
 Those bytes come from a memory array inside the Nano.
@@ -625,7 +625,7 @@ Memory loaded
    398200us 001 1 ea    // Internal 
    400072us 100 1 ea    // Push PCH
    401928us 1ff 1 ea    // Push PCL
-   403808us 1fe 1 ea    // Push P
+   403808us 1fe 1 ea    // Push PSW
    405680us 3fc 1 00    // LD PCL
    407536us 3fd 1 02    // LD PCH
    409408us 200 1 a9 // LDA #$00 
@@ -653,20 +653,133 @@ Memory loaded
 
 The clock steps are still 2000us or 0.5kHz.
 
+## 8 Test IRQ
 
+Now that we have RAM operational, we can really test interrupts.
+We did that before (by grounding nIRQ), but we could do that only one time (after reset).
+The reason is that as part of the IRQ handling (the 7 steps of interrupt handling), the 6502 automatically 
+sets the I flag (also known as IRQ-disable flag) to 1. From that moment on, IRQs are disabled.
+
+The I flag is cleared by the `RTI` instruction, since that pops the old PSW register (which contains the I flag). 
+Now that we have RAM emulation, the push of PSW is operational, so the pop of PSW is effective.
+
+The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with one exception.
+The `mem` array is loaded with a different firmware for the 6502.
+
+There are two functions. The `main` gets executed from the reset vector
+
+```asm
+* = $0200
+0200 MAIN
+0200        CLI             58
+0201        LDA #$00        A9 00
+0203        STA *$33        85 33
+0205        STA *$44        85 44
+0207 LOOP   
+0207        INC *$33        E6 33
+0209        JMP LOOP        4C 07 02
+```
+
+In its `loop` it increments zero page location 33.
+But it initializes zero page location 33 to 00.
+
+It has two other features: it also initializes zero page location 44 to 00, and it enables interupts (`CLI`).
+
+The secon function is the `isr`, it gets executed from the irq vector:
+
+```asm
+* = $0300
+0300 ISR
+0300        INC *$44        E6 44
+0302        RTI             40
+```
+
+All these opcode bytes are written to the `mem[]` array in `mem_load()`.
+Do not forget to initialize mem locations fffc/fffd (reset) and fffe/ffff (irq).
+
+This is the annotated trace.
 
 ```
-  // https://www.masswerk.at/6502/assembler.html
-  // *=$300
-  // INC *$44
-  // RTI
-
-  // * = $0300
-  mem[0x3fe]= 0x00;
-  mem[0x3ff]= 0x03;
-  // 0300        INC *$44        E6 44
-  mem[0x300]= 0xE6;
-  mem[0x301]= 0x44;
-  // 0302        RTI             40
-  mem[0x302]= 0x40;
+Welcome to RamIrq6502
+200: 58 a9 00 85 33 85 44 e6 33 4c 07 02 ea ea ea ea
+300: e6 44 40 ea ea ea ea ea ea ea ea ea ea ea ea ea
+3f0: ea ea ea ea ea ea ea ea ea ea ea ea 00 02 00 03
+Memory loaded
+    12192us 2f1 1 ea
+    13904us 2f1 1 ea
+    15776us 2f1 1 ea
+        ...
+   290664us 2f1 1 ea
+   292536us 2f1 1 ea <- reset
+   294416us 2f1 1 ea    // internal
+   296288us 2f1 1 ea    // internal
+   298144us 139 1 ea    // push PCH
+   300016us 138 1 ea    // push PCL
+   301896us 137 1 ea    // push PSW
+   303752us 3fc 1 00    // LD PCL
+   305624us 3fd 1 02    // LD PCH
+   307496us 200 1 58 <- main
+   309376us 201 1 a9
+   311248us 201 1 a9
+   313104us 202 1 00
+   314976us 203 1 85
+   316856us 204 1 33
+   318728us 033 0 00 <- clear 33
+   320588us 205 1 85
+   322456us 206 1 44
+   324336us 044 0 00 <- clear 44
+   326192us 207 1 e6 <- loop
+   328064us 208 1 33
+   329952us 033 1 00
+   331820us 033 1 00
+   333672us 033 0 01 <- update 33
+   335544us 209 1 4c
+   337416us 20a 1 07
+   339296us 20b 1 02
+   341152us 207 1 e6 <- loop
+   343024us 208 1 33 
+   344896us 033 1 01 
+   346776us 033 1 01 
+   348632us 033 0 02 <- update 33
+   350504us 209 1 4c
+   352376us 20a 1 07
+   354256us 20b 1 02
+        ...
+  1741784us 209 1 4c
+  1743656us 20a 1 07
+  1745536us 20b 1 02
+  1747408us 207 1 e6
+  1749264us 208 1 33
+  1751140us 033 1 5f
+  1753016us 033 1 5f
+  1754888us 033 0 60 <- IRQ (when PC=209)
+  1756744us 209 1 4c    // internal
+  1758616us 209 1 4c    // internal
+  1760496us 136 0 02    // push PCH 
+  1762372us 135 0 09    // push PCL
+  1764224us 134 0 60    // push PSW
+  1766096us 3fe 1 00    // LD PCL
+  1767976us 3ff 1 03    // LD PCH
+  1769848us 300 1 e6 <- ISR
+  1771704us 301 1 44
+  1773580us 044 1 00
+  1775456us 044 1 00
+  1777328us 044 0 01 <- update 44
+  1779184us 302 1 40 <- RTI
+  1781064us 303 1 ea    //
+  1782936us 133 1 ea    // 
+  1784808us 134 1 60    // pop PSW
+  1786664us 135 1 09    // pop PCL
+  1788536us 136 1 02    // pop PCH
+  1790416us 209 1 4c <- back in main 
+  1792288us 20a 1 07
+  1794148us 20b 1 02
+  1796016us 207 1 e6 <- loop
+  1797896us 208 1 33 
+  1799768us 033 1 60 
+  1801624us 033 1 60 
+  1803496us 033 0 61 <- update 33
+  1805380us 209 1 4c
+  1807248us 20a 1 07
+  1809104us 20b 1 02
 ```
