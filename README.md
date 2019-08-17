@@ -26,10 +26,11 @@ The [first chapter](1clock/README.md) discusses three options:
 
 ## 2 Emulation
 The Nano as clock source was not only easy, it also gave me a nice idea.
-When the Nano controls the clock, it also knows when to sample the data lines. We then have a spy that can follow each step.
+When the Nano controls the clock, it also knows when to sample the address lines. 
+We then have a spy that can follow each step.
 That appeared to work very well, as discussed in the [second chapter](2emulation/README.md).
 Would it even be possible to sample the data lines? Yes! and spoof the data lines? Yes!
-The Nano now emulates a memory.
+The Nano now emulates a memory in addition to a clock.
 
 ## 3 EEPROM
 The Nano was fun, but this was a hardware project, not a software project.
