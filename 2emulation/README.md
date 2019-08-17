@@ -11,14 +11,14 @@ Then I had a nice idea: the Nano controls the clock, so it knows when the addres
 Can't we snoop (read) the data bus as well? Can't we _write_ the data bus? Yes, yes, and yes.
 
 We will do the following experiments
- - [1 Clock](1-Clock) - Use Nano as clock
- - [2 Address bus](2-Address-bus) - Use Nano to trace the address bus
- - [3 Jump loop](3-Jump-loop) - Test case: trace a JMP loop
- - [4 Data bus](4-Data-bus) - Use Nano to trace the data bus as well
- - [5 Interrupt (IRQ)](5-Interrupt-(IRQ)) - Test case: trace a single IRQ
- - [6 Emulate ROM](6-Emulate-ROM) - Use Nano to respond to data read requests
- - [7 Emulate RAM](7-Emulate-RAM) - Use Nano to also respond to data write requests
- - [8 Test IRQ](8-Test-IRQ) - Test case: trace IRQs
+ - [1 Clock](README.md#1-Clock) - Use Nano as clock
+ - [2 Address bus](README.md#2-Address-bus) - Use Nano to trace the address bus
+ - [3 Jump loop](README.md#3-Jump-loop) - Test case: trace a JMP loop
+ - [4 Data bus](README.md#4-Data-bus) - Use Nano to trace the data bus as well
+ - [5 Interrupt (IRQ)](README.md#5-Interrupt-(IRQ)) - Test case: trace a single IRQ
+ - [6 Emulate ROM](README.md#6-Emulate-ROM) - Use Nano to respond to data read requests
+ - [7 Emulate RAM](README.md#7-Emulate-RAM) - Use Nano to also respond to data write requests
+ - [8 Test IRQ](README.md#8-Test-IRQ) - Test case: trace IRQs
 
 ## 1 Clock
 
