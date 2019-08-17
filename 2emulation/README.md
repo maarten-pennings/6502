@@ -563,9 +563,97 @@ Welcome to Rom6502
 
 ## Emulate RAM
 
- - Now also support data write
+In the previous section we implemented a ROM: the 6502 could _read_ bytes.
+Those bytes come from a memory array inside the Nano.
 
-Need RAM for this, because of the stack
+In this section we will extend the Nano firmware.
+It will accept _writes_ from the 6502; the written bytes will be written to memory array inside the Nano.
+
+The schematics and breadboard do not change; it is just the firmware inside the Nano.
+This is the important part:
+
+```cpp
+void loop() {
+  // Send clock low
+  digitalWrite(PIN_CLOCK, LOW);
+  
+  // Read address bus
+  uint16_t addr=0 ;
+  addr += digitalRead(PIN_ADDR_0) << 0;
+  addr += digitalRead(PIN_ADDR_1) << 1;
+  ...
+  
+  // Read R/nW
+  uint8_t rnw=0 ;
+  rnw += digitalRead(PIN_RnW) << 0;
+
+  // Send clock high again
+  digitalWrite(PIN_CLOCK, HIGH);
+
+  // Write or read depends on R/nW
+  uint8_t data;
+  if( rnw ) { // R/nW==1, so 6502 reads, so Nano writes
+    data= mem[addr];
+    data_write(data);
+  } else { // R/nW==0, so 6502 writes, so Nano reads
+    data= data_read();
+    mem[addr]= data;
+  }
+
+  // Print address bus
+  char buf[32];
+  sprintf(buf,"%9ldus %03x %0x %02x",micros(),addr,rnw,data);
+  Serial.println(buf);
+}
+```
+
+Those who have been following my experiments might notice that I'm not consistent with the 
+placement of the clock changes `digitalWrite(PIN_CLOCK,LOW)` and `digitalWrite(PIN_CLOCK,HIGH)`.
+The truth is, I do not fully understand what the relation is between the clock edges and 
+the moments to read the address, R/nW line, or access the data lines.
+
+This is the trace:
+
+```
+Welcome to Ram6502
+Memory loaded
+     1248us 314 1 ea
+     2048us 001 1 ea
+     2848us 001 1 ea
+   394464us 001 1 ea    <- RESET
+   396324us 001 1 ea    // Internal 
+   398200us 001 1 ea    // Internal 
+   400072us 100 1 ea    // Push PCH
+   401928us 1ff 1 ea    // Push PCL
+   403808us 1fe 1 ea    // Push P
+   405680us 3fc 1 00    // LD PCL
+   407536us 3fd 1 02    // LD PCH
+   409408us 200 1 a9 // LDA #$00 
+   411280us 201 1 00
+   413160us 202 1 85 // STA *$33
+   415032us 203 1 33
+   416888us 033 0 00    <- store 0 in 33
+   418760us 204 1 e6 // INC *$33
+   420640us 205 1 33
+   422496us 033 1 00    <- gets 0 from 33
+   424368us 033 1 00 
+   426240us 033 0 01    <- store 1 in 33
+   428124us 206 1 4c // JMP 0204
+   429976us 207 1 04 
+   431848us 208 1 02
+   433720us 204 1 e6 // INC *$33
+   435600us 205 1 33 
+   437472us 033 1 01    <- gets 1 from 33
+   439332us 033 1 01 
+   441200us 033 0 02    <- store 2 in 33
+   443080us 206 1 4c
+   444936us 207 1 04
+   446816us 208 1 02
+```
+
+The clock steps are still 2000us or 0.5kHz.
+
+
 
 ```
   // https://www.masswerk.at/6502/assembler.html
