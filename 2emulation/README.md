@@ -481,13 +481,13 @@ void load() {
   // 0200        LDX #$00        A2 00
   mem[0x200]= 0xA2;
   mem[0x201]= 0x00;
-  // 0202 LOOP:  INX             E8
+  // 0202 LOOP   INX             E8
   mem[0x202]= 0xE8;
   // 0203        STX $0155       8E 55 01
   mem[0x203]= 0x8E;
   mem[0x204]= 0x55;
   mem[0x205]= 0x01;
-  // 0206        JMP LOOP:       4C 02 02
+  // 0206        JMP LOOP        4C 02 02
   mem[0x206]= 0x4C;
   mem[0x207]= 0x02;
   mem[0x208]= 0x02;
@@ -502,9 +502,9 @@ This is the assembler code
 ```asm
 * = $0200
 0200        LDX #$00        A2 00
-0202 LOOP:  INX             E8
+0202 LOOP   INX             E8
 0203        STX $0155       8E 55 01
-0206        JMP LOOP:       4C 02 02
+0206        JMP LOOP        4C 02 02
 ```
 
 I used the [on-line 6502 compiler](https://www.masswerk.at/6502/assembler.html) to get the opcodes.
@@ -681,11 +681,11 @@ There are two functions. The `main` gets executed from the reset vector
 ```
 
 In its `loop` it increments zero page location 33.
-But it initializes zero page location 33 to 00.
 
-It has two other features: it also initializes zero page location 44 to 00, and it enables interupts (`CLI`).
-
-The secon function is the `isr`, it gets executed from the irq vector:
+Before the loop, it initializes zero page location 33 to 00.
+It has two other initliazations: zero page location 44 to 00, and enabling of interupts (`CLI`).
+The enabling of interrupts allows the second function `isr` to be called when grounding the nIRQ line.
+The `isr` increments zero page location 44.
 
 ```asm
 * = $0300
@@ -695,7 +695,7 @@ The secon function is the `isr`, it gets executed from the irq vector:
 ```
 
 All these opcode bytes are written to the `mem[]` array in `mem_load()`.
-Do not forget to initialize mem locations fffc/fffd (reset) and fffe/ffff (irq).
+Do not forget that `mem-load(0` should initialize mem locations fffc/fffd (reset) and fffe/ffff (irq).
 
 This is the annotated trace.
 
@@ -783,3 +783,12 @@ Memory loaded
   1807248us 20a 1 07
   1809104us 20b 1 02
 ```
+
+## Conclusion
+
+We have a 6502 with some passives (pull-ups, caps) and a Nano.
+The Nano implements the rest of the system: memory and clock.
+And it povides a trace facility.
+
+This is a great way to investigate the behavior of the 6502.
+And it offers an easy start, nextt to the 6502 only a nano is needed.
