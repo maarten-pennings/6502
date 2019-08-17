@@ -22,7 +22,7 @@ We will do the following experiments
 
 ## 1 Clock
 
-The [first step](https://github.com/maarten-pennings/6502/tree/master/1clock#clock---nano---wiring) was taken in the 
+The [first step](../1clock/README.md#clock---nano---wiring) was taken in the 
 previous chapter. We used a Nano as a clock source for the 6502. The address lines are dangling, the data lines are hardwired to EA 
 (the opcode of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 
 "free" running at 160kHz.
