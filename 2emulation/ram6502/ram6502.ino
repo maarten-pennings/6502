@@ -1,4 +1,4 @@
-// Rom6502: use a Nano to generate a clock for the 6502 and act as a ROM (on addr/data lines).
+// Ram6502: use a Nano to generate a clock for the 6502 and act as a RAM (on addr/data lines).
 
 // Connect the grounds. Supply the 6502 from the 5V0 of the Nano.
 // Connect D2 of Nano to phi0 of 6502, and D3 of Nano to R/nW of 6502.
@@ -28,6 +28,7 @@
 #define VAL_ADDR_8 (analogRead(A6)>512)
 #define VAL_ADDR_9 (analogRead(A7)>512)
 
+// This is the 1kB RAM memory that the Nano emulates
 uint8_t mem[1024];
 // Note, the Arduino emulates 1k of memory (10 address lines)
 // This memory block is mirrored 64 times.
@@ -41,44 +42,30 @@ void load() {
   // Fill entire memory with NOP
   for(int i=0; i<1024; i++ ) mem[i]=0xEA; // NOP
 
-  // https://www.masswerk.at/6502/assembler.html
-  // * = $0200
-  // 0200        LDX #$00        A2 00
-  // 0202 LOOP:  INX             E8
-  // 0203        STX $0155       8E 55 01
-  // 0206        JMP LOOP:       4C 02 02
-
+  // RAM is preloaded with a simple programm
+  //   https://www.masswerk.at/6502/assembler.html
   // * = $0200
   mem[0x3fc]= 0x00;
   mem[0x3fd]= 0x02;
-  // 0200        LDX #$00        A2 00
-  mem[0x200]= 0xA2;
+  // 0200        LDA #$00        A9 00
+  mem[0x200]= 0xA9;
   mem[0x201]= 0x00;
-  // 0202 LOOP:  INX             E8
-  mem[0x202]= 0xE8;
-  // 0203        STX $0155       8E 55 01
-  mem[0x203]= 0x8E;
-  mem[0x204]= 0x55;
-  mem[0x205]= 0x01;
-  // 0206        JMP LOOP:       4C 02 02
+  // 0202        STA *$33        85 33
+  mem[0x202]= 0x85;
+  mem[0x203]= 0x33;
+  // 0204 LOOP   
+  // 0204        INC *$33        E6 33
+  mem[0x204]= 0xE6;
+  mem[0x205]= 0x33;
+  // 0206        JMP LOOP        4C 04 02
   mem[0x206]= 0x4C;
-  mem[0x207]= 0x02;
+  mem[0x207]= 0x04;
   mem[0x208]= 0x02;
 }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println();
-  Serial.println("Welcome to Rom6502");
-
-  load();
-  
-  pinMode(PIN_CLOCK, OUTPUT);
-  digitalWrite(PIN_CLOCK, HIGH);
-
-  pinMode(PIN_RnW, INPUT);
-  
-  // We do not use the data lines to spy, but to feed the 6502 with instructions
+// When the 6502 issues a read on the bus, the Nano writes 
+void data_write( uint8_t data ) {
+  // First configure data pins as output
   pinMode(PIN_DATA_0, OUTPUT);
   pinMode(PIN_DATA_1, OUTPUT);
   pinMode(PIN_DATA_2, OUTPUT);
@@ -88,6 +75,64 @@ void setup() {
   pinMode(PIN_DATA_6, OUTPUT);
   pinMode(PIN_DATA_7, OUTPUT);
 
+  // Next, output `data` on data pins
+  digitalWrite(PIN_DATA_0, (data&(1<<0))?HIGH:LOW );
+  digitalWrite(PIN_DATA_1, (data&(1<<1))?HIGH:LOW );
+  digitalWrite(PIN_DATA_2, (data&(1<<2))?HIGH:LOW );
+  digitalWrite(PIN_DATA_3, (data&(1<<3))?HIGH:LOW );
+  digitalWrite(PIN_DATA_4, (data&(1<<4))?HIGH:LOW );
+  digitalWrite(PIN_DATA_5, (data&(1<<5))?HIGH:LOW );
+  digitalWrite(PIN_DATA_6, (data&(1<<6))?HIGH:LOW );
+  digitalWrite(PIN_DATA_7, (data&(1<<7))?HIGH:LOW );
+}
+
+// When the 6502 issues a write on the bus, the Nano reads
+uint8_t data_read( void ) {
+  // First configure data pins as output
+  pinMode(PIN_DATA_0, INPUT);
+  pinMode(PIN_DATA_1, INPUT);
+  pinMode(PIN_DATA_2, INPUT);
+  pinMode(PIN_DATA_3, INPUT);
+  pinMode(PIN_DATA_4, INPUT);
+  pinMode(PIN_DATA_5, INPUT);
+  pinMode(PIN_DATA_6, INPUT);
+  pinMode(PIN_DATA_7, INPUT);
+  
+  // Next, output `data` on data pins
+  uint8_t data= 0;
+  data += digitalRead(PIN_DATA_0) << 0;
+  data += digitalRead(PIN_DATA_1) << 1;
+  data += digitalRead(PIN_DATA_2) << 2;
+  data += digitalRead(PIN_DATA_3) << 3;
+  data += digitalRead(PIN_DATA_4) << 4;
+  data += digitalRead(PIN_DATA_5) << 5;
+  data += digitalRead(PIN_DATA_6) << 6;
+  data += digitalRead(PIN_DATA_7) << 7;
+  return data;
+}
+
+
+void setup() {
+  // Configure serial port
+  Serial.begin(115200);
+  Serial.println();
+  Serial.println("Welcome to Ram6502");
+  
+  // Setup emulated RAM
+  load();
+  Serial.println("Memory loaded");  
+  
+  // Configure clock
+  pinMode(PIN_CLOCK, OUTPUT);
+  digitalWrite(PIN_CLOCK, HIGH);
+  
+  // Configure R/nW
+  pinMode(PIN_RnW, INPUT);
+  
+  // Configure data lines
+  /* skipped, done per memory transaction, see data_write, data_read */
+  
+  // Configure address lines
   pinMode(PIN_ADDR_0, INPUT);
   pinMode(PIN_ADDR_1, INPUT);
   pinMode(PIN_ADDR_2, INPUT);
@@ -118,22 +163,21 @@ void loop() {
   addr +=            (VAL_ADDR_9) << 9;
 
   // Read R/nW
-  uint16_t rnw=0 ;
+  uint8_t rnw=0 ;
   rnw += digitalRead(PIN_RnW) << 0;
-  
-  // Write data bus
-  uint16_t data= mem[addr] ;
-  digitalWrite(PIN_DATA_0, (data&(1<<0))?HIGH:LOW );
-  digitalWrite(PIN_DATA_1, (data&(1<<1))?HIGH:LOW );
-  digitalWrite(PIN_DATA_2, (data&(1<<2))?HIGH:LOW );
-  digitalWrite(PIN_DATA_3, (data&(1<<3))?HIGH:LOW );
-  digitalWrite(PIN_DATA_4, (data&(1<<4))?HIGH:LOW );
-  digitalWrite(PIN_DATA_5, (data&(1<<5))?HIGH:LOW );
-  digitalWrite(PIN_DATA_6, (data&(1<<6))?HIGH:LOW );
-  digitalWrite(PIN_DATA_7, (data&(1<<7))?HIGH:LOW );
 
   // Send clock high again
   digitalWrite(PIN_CLOCK, HIGH);
+
+  // Write or read depends on R/nW
+  uint8_t data;
+  if( rnw ) { // R/nW==1, so 6502 reads, so Nano writes
+    data= mem[addr];
+    data_write(data);
+  } else { // R/nW==0, so 6502 writes, so Nano reads
+    data= data_read();
+    mem[addr]= data;
+  }
 
   // Print address bus
   char buf[32];

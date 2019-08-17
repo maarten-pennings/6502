@@ -36,6 +36,8 @@ void setup() {
   pinMode(PIN_CLOCK, OUTPUT);
   digitalWrite(PIN_CLOCK, HIGH);
   
+  pinMode(PIN_RnW, INPUT);
+  
   pinMode(PIN_DATA_0, INPUT);
   pinMode(PIN_DATA_1, INPUT);
   pinMode(PIN_DATA_2, INPUT);
