@@ -18,6 +18,13 @@ The third way is more the software approach: use an Arduino Nano to generate the
 of your project. You might already have it laying around. You do not need to order any other special components, and it gives 
 you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
 
+> **Terminology**
+> An oscillator is a circuit whose output oscilates. Oscillators have three pins VCC, GND, OUT.
+> The circuit is usually a feedback loop around a "frequency determining element" or resonator. 
+> This element can be a (quartz) crystal, which is accurate and relatively temperature independent.
+> The resonator can also be a ceramic elements rather than quartz; cheaper but less stable.
+> Resonators have two wires.
+
 ## Clock - crystal
 We can build our own oscillator using a crystal.
 
