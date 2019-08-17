@@ -664,10 +664,11 @@ sets the I flag (also known as IRQ-disable flag) to 1. From that moment on, IRQs
 The I flag is cleared by the `RTI` instruction, since that pops the old PSW register (which contains the I flag). 
 Now that we have RAM emulation, the push of PSW is operational, so the pop of PSW is effective.
 
-The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with one exception.
-The `mem` array is loaded with a different firmware for the 6502. And we have added a `mem_dump()` routine that is 
-called from `setup()` so that we can check the `mem` array is correctly initialized.
+The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with two exceptions.
+The `mem[]` array is loaded with a different "program" for the 6502. And we have added a `mem_dump()` routine that is 
+called from `setup()` so that we can check the `mem[]` array is correctly initialized.
 
+The core of the change is the new 6502 "program".
 There are two functions `main` and `isr`. 
 The `main` gets executed from the reset vector.
 
@@ -796,4 +797,4 @@ The Nano implements the rest of the system: memory and clock.
 And it povides a trace facility.
 
 This is a great way to investigate the behavior of the 6502.
-And it offers an easy start, nextt to the 6502 only a nano is needed.
+And it offers an easy start: next to the 6502 only a nano is needed.
