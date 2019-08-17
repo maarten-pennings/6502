@@ -190,24 +190,27 @@ Our second board will have an Arduino Nano as clock generator.
 Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano).
 Of course you can also get a [clone](https://www.aliexpress.com/item/32969876875.html).
 
-![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
-
 ### Clock - Nano - wiring
 It is not much different from the previous board, but it offers much more flexibility.
 One nice feature is that you can power the 6502 from the Nano (connect 5V0 to VCC, and of course connect all GNDs).
+This feature is a bit hidden in the schematic below:
 
-We need the same "stubs": RDY, IRQ, NMI, RES, SO are pulled-up. 
-Have a button to pull-down RES.
-Wire D0-D7 to 1110 1010 representing NOP.
+![Schematic of 6502 with Nano](6502-nano-schem.png)
+
+We need the same "stubs": RDY, nIRQ, nNMI, nRES, SO are pulled-up. 
+Have a button to pull-down nRES.
+Wire data lines D0-D7 to 1110 1010 representing NOP.
 New is that φ0 is connected to D2 of the Nano.
 Since the Nano will be slower than the oscillator it is good to have LEDs on lower address lines (e.g. A1, A5, A10) too.
 
-![Schematic of 6502 with Nano](6502-nano-schem.png)
+![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
+
 
 ### Clock - Nano - software
 Find the sketch for the Nano in directory [clock6502](clock6502).
 It is a simple sketch that just flips the clock line:
-```
+
+```cpp
 void loop() {
   digitalWrite(CLOCK, HIGH);
   digitalWrite(CLOCK, LOW);
