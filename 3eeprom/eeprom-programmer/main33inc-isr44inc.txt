@@ -1,0 +1,48 @@
+@echo disable
+# Main loop increments 33, ISR increments 44
+# 2019 aug 18, Maarten Pennings
+@verify clear
+
+echo line
+echo Program MAIN
+echo ------------
+
+program 7FC 00 02
+program 200 *
+         # 0200 MAIN
+58       # 0200        CLI
+A9 00    # 0201        LDA #$00
+85 33    # 0203        STA *$33
+85 44    # 0205        STA *$44
+         # 0207 LOOP
+E6 33    # 0207        INC *$33
+4C 07 02 # 0209        JMP LOOP
+*
+
+echo line
+echo Program ISR
+echo -----------
+
+program 7FE 00 03
+program 300 *
+         # 0300 ISR
+E6 44    # 0300        INC *$44
+40       # 0302        RTI
+*
+
+echo line
+echo Dump
+echo ----
+
+r 200 10
+r 300 10
+r 7f0 10
+
+echo line
+echo Verify
+echo ------
+verify print
+
+echo line
+@echo enable
+
