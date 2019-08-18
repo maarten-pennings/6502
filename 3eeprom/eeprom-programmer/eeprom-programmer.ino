@@ -3,7 +3,7 @@
 
 #define PROG_NAME    "Arduino EEPROM programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "4"
+#define PROG_VERSION "5"
 #define PROG_DATE    "2019 aug 18"
 #define PROG_AUTHOR  "Maarten Pennings"
 
@@ -292,10 +292,10 @@ void cmd_main_read( struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_read_longhelp[] PROGMEM = 
-  "SYNAX: read [ <addr> [ <num> ]\n"
+  "SYNAX: read [ <addr> [ <num> ] ]\n"
   "- reads <num> bytes from EEPROM, starting at location <addr>\n"
   "- when <num> is absent, it defaults to 1\n"
-  "- when <addr> and <num> ar absent, reads entire EEPROM\n"
+  "- when <addr> and <num> are absent, reads entire EEPROM\n"
   "NOTE:\n"
   "- <addr> and <num> are in hex\n"
 ;
@@ -315,8 +315,8 @@ void cmd_main_write(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 
 const char cmd_write_longhelp[] PROGMEM = 
   "SYNAX: write <addr> <data>...\n"
-  "- writes one byte <data> to EEPROM location <addr>\n"
-  "- multiple <data> bytes allowed\n"
+  "- writes <data> byte to EEPROM location <addr>\n"
+  "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode\n"
   "NOTE:\n"
   "- <addr> and <data> are in hex\n"
@@ -330,7 +330,8 @@ const char cmd_write_longhelp[] PROGMEM =
   
 const char cmd_program_longhelp[] PROGMEM = 
   "SYNAX: program <addr> <data>...\n"
-  "- performs write followed by verify"
+  "- performs write followed by verify\n"
+  "- see help for those commands for details\n"
 ;
 
 // The handler for the "verify" command
@@ -352,7 +353,7 @@ const char cmd_verify_longhelp[] PROGMEM =
   "- reads byte from EEPROM location <addr> and compares to <data>\n"
   "- prints <data> if equal, or '<data>~<read>' if unequal, where <read> is read data\n"
   "- unequal values increment global error counter\n"
-  "- multiple <data> bytes allowed\n"
+  "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode (see `write` command)\n"
   "SYNAX: verify print\n"
   "- prints global error counter\n"
@@ -362,7 +363,58 @@ const char cmd_verify_longhelp[] PROGMEM =
   "NOTE:\n"
   "- <addr> and <data> are in hex\n"
 ;
+
+// helper for cmd_main_erase() to erase part of EEPROM
+void cmd_erase(uint16_t addr, uint16_t num, uint8_t data ) {
+  char buf[8];
+  for(uint16_t base= addr; base<addr+num; base+=CMD_BYTESPERLINE ) {
+    snprintf(buf,sizeof(buf),"%03x:",base); Serial.print(buf);
+    uint16_t a= base;
+    for(int i=0; i<CMD_BYTESPERLINE && a<addr+num; i++,a++ ) {
+      eeprom_write(a,data);
+      uint8_t data2= eeprom_read(a);
+      snprintf(buf,sizeof(buf)," %02x",data); Serial.print(buf);
+      if( data!=data2 ) { snprintf(buf,sizeof(buf),"~%02x",data2); Serial.print(buf); cmd_stream_errors++; }
+    }
+    Serial.println("");
+  }
+}
+
+// The handler for the "erase" command
+void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  // erase [ <addr> [ <num> [ <data> ] ] ]
+  if( argc==1 ) { cmd_erase(0x000, EEPROM_SIZE, 0xFF); return; }
+  // Parse addr
+  uint16_t addr;
+  if( !cmd_parse(argv[1],&addr) ) { Serial.println(F("ERROR: erase: <addr> must be hex")); return; }
+  if( addr>=EEPROM_SIZE ) { Serial.println(F("ERROR: erase <addr>: <addr> out of range")); return; }
+  if( addr+0x100>EEPROM_SIZE )  { Serial.println(F("ERROR: erase: <addr>+100 out of range")); return; }
+  if( argc==2 ) { cmd_erase(addr,0x100,0xFF); return; }
+  // Parse num
+  uint16_t num;
+  if( !cmd_parse(argv[2],&num) ) { Serial.println(F("ERROR: erase: <num> must be hex")); return; }
+  if( addr+num>EEPROM_SIZE ) { Serial.println(F("ERROR: erase: <addr>+<num> out of range")); return; }
+  if( argc==3 ) { cmd_erase(addr,num,0xFF); return; }
+  // Parse data
+  uint16_t data;
+  if( !cmd_parse(argv[3],&data) ) { Serial.println(F("ERROR: erase: <data> must be hex")); return; }
+  if( data>=256 ) { Serial.print(F("ERROR: erase: <data> must be 00..FF")); return; }
+  if( argc==4 ) { cmd_erase(addr,num,data); return; }
+  Serial.println(F("ERROR: erase: too many arguments"));
+}
+
+const char cmd_erase_longhelp[] PROGMEM = 
+  "SYNAX: erase [ <addr> [ <num> [ <data> ] ] ]\n"
+  "- erase <num> bytes from EEPROM, starting at location <addr>, by writing <data>\n"
+  "- when <data> is absent, erase by writing 1's (<data>=FF)\n"
+  "- when <num> is absent, erase one page (<num>=100)\n"
+  "- when <addr> is absent, erase entire EEPROM\n"
+  "- erase is always verified\n"
+  "NOTE:\n"
+  "- <addr>, <num>, and <data> are in hex\n"
+;
   
+
 // The handler for the "info" command
 void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   Serial.println(F("info: name   : " PROG_NAME));
@@ -414,18 +466,18 @@ void cmd_main_echo(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 
 const char cmd_echo_longhelp[] PROGMEM = 
   "SYNAX: echo [line] <word>...\n"
-  "- echo's all words\n"
+  "- echo's (prints) all words (useful in scripts)\n"
   "SYNAX: [@]echo [ enable | disable ]\n"
-  "- without arguments shows status of echoing\n"
-  "- with arguments enables/disables echoing\n"
+  "- without arguments shows status of terminal echoing\n"
+  "- with arguments enables/disables terminal echoing\n"
   "- with @ present, no feedback is printed\n"
+  "- useful in scripts; output is relevant, but input much less\n"
   "NOTES:\n"
   "- 'echo line' prints a white line\n"
   "- 'echo line enable' prints 'enable'\n"
   "- 'echo line disable' prints 'disable'\n"
   "- 'echo line line' prints 'line'\n"
 ;
-  
 
 // The handler for the "help" command
 extern struct cmd_desc_s cmd_descs[];
@@ -467,10 +519,11 @@ struct cmd_desc_s cmd_descs[] = {
   { cmd_main_help  , "help", "gives help (try 'help help')", cmd_help_longhelp },
   { cmd_main_info  , "info", "application info", cmd_info_longhelp },
   { cmd_main_echo  , "echo", "echo a message (or en/disables echoing)", cmd_echo_longhelp },
-  { cmd_main_read  , "read", "read memory locations: read [ <addr> [ <num> ] ]", cmd_read_longhelp },
-  { cmd_main_write , "write", "write memory locations: write <addr> <val>+ , <val> may be *", cmd_write_longhelp },
-  { cmd_main_verify, "verify", "verify memory locations", cmd_verify_longhelp },
-  { cmd_main_write , "program", "program (write and verify): program <addr> <val>+ , <val> may be *", cmd_program_longhelp },
+  { cmd_main_read  , "read", "read EEPROM memory", cmd_read_longhelp },
+  { cmd_main_write , "write", "write EEPROM memory", cmd_write_longhelp },
+  { cmd_main_verify, "verify", "verify EEPROM memory", cmd_verify_longhelp },
+  { cmd_main_write , "program", "write and verify and verify EEPROM memory", cmd_program_longhelp },
+  { cmd_main_erase , "erase", "erases EEPROM memory", cmd_erase_longhelp },
   { 0,0,0,0 }
 };
 
@@ -571,27 +624,30 @@ void cmd_add(int ch) {
 
 // Keyboard =============================================================
 
-#define KEY_UP_PIN A7
-#define KEY_DN_PIN A6
+// Pins for the keys
+#define KEY_UP_PIN A5
+#define KEY_DN_PIN A4
 
+// Code for the keys
 #define KEY_UP 1
 #define KEY_DN 2
 
 int key_prv;
 int key_cur;
 
+void key_init( void ) {
+  pinMode(KEY_UP_PIN, INPUT);
+  pinMode(KEY_DN_PIN, INPUT);
+  key_scan();
+  key_scan();
+}
+
 void key_scan( void ) {
   key_prv= key_cur;
   key_cur= 0;
-  if( analogRead(KEY_UP_PIN)>=512 ) key_cur|= KEY_UP;
-  if( analogRead(KEY_DN_PIN)>=512 ) key_cur|= KEY_DN;
+  if( digitalRead(KEY_UP_PIN) ) key_cur|= KEY_UP;
+  if( digitalRead(KEY_DN_PIN) ) key_cur|= KEY_DN;
 }
-
-void key_init( void ) {
-  key_scan();
-  key_scan();
-}
-
 
 int key_pressed( void ) {
   return ( key_cur ^ key_prv ) & key_cur;
