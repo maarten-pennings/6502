@@ -1,28 +1,84 @@
-# Emulation
-Trying to build a 6502 based computer, we need an EEPROM, and an EEPROM programmer
+# EEPROM
+Trying to build a 6502 based computer.
 
-The [eeprom programmer](eeprom-programmer) seems to work well: give it (write, read) instructions via USB. 
-An [example](eeprom-programmer/inx-loop.txt) script is available.
+We need a memory to store a program that executes on reset.
+This program could be a basic interpreter or monitor.
+This memory needs to preserve data over power down.
+So we go for a ROM, actually a programmable ROM (PROM).
+We make mistakes so let it be an EPROM (eraseble PROM), 
+and in this age that will be an EEPROM (electrically erasable PROM).
 
-program 7FC 00 02
+I found the AT28C16, a 2kB EEPROM.
+I also found a [Youtube video by Ben Eater](https://youtu.be/K88pgWhEb1M) 
+that explained how to make a programmer for it using a Nano.
+
+This is the schematic of my _Arduino EEPROM programmer_:
+
+![Arduino EEPROM programmer schematic](eeprom-programmer.png)
+
+And this a picture of my breadboard:
+
+![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
+
+The Nano in the Arduino EEPROM programmer needs a sketch.
+With [this sketch](eeprom-programmer) you can connect to the Nano via a terminal program (UART over USB), 
+and give the Nano commands to write or read EEPROM locations. 
+
+The programmer has LEDs which show the current address and data.
+The two buttons allows the user to go to next or previous address.
+So, this is an alternative to the USB interface, but only allows reading.
+
+Instead of entering commands manually over the UART/USB, one can also send a file 
+(keep in mind that the Nano is less fast then your PC, so you should typically configure 
+the terminal to have a character or line delay - I use a line delay of 10ms).
+Such a file could be called an EEPROM programming script.
+Two example scripts are given
+ - [simple](eeprom-programmer/inx-loop.txt)
+ - [elaborated](eeprom-programmer/main33inc-isr44inc.txt)
+
+The latter script is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
+This is the output of the script.
+
+
 ```
-         # 0200 MAIN
-58       # 0200        CLI
-A9 00    # 0201        LDA #$00
-85 33    # 0203        STA *$33
-85 44    # 0205        STA *$44
-         # 0207 LOOP
-E6 33    # 0207        INC *$33
-4C 07 02 # 0209        JMP LOOP
-
-         # 0300 ISR
-E6 44    # 0300        INC *$44
-40       # 0302        RTI
-
-00 02    # 7FC 
-00 03    # 7FE 
+>> @echo disable                                                                
+                                                                                
+Program MAIN                                                                    
+------------                                                                    
+7fc: 00 02                                                                      
+200: (*                                                                         
+200: 58                                                                         
+201: a9 00                                                                      
+203: 85 33                                                                      
+205: 85 44                                                                      
+207: e6 33                                                                      
+209: *)                                                                         
+                                                                                
+Program ISR                                                                     
+-----------                                                                     
+7fe: 00 03                                                                      
+300: (*                                                                         
+300: e6 44                                                                      
+302: 40                                                                         
+303: *)                                                                         
+                                                                                
+Dump                                                                            
+----                                                                            
+200: 58 a9 00 85 33 85 44 e6 33 ff ff ff ff ff ff ff                            
+300: e6 44 40 ff ff ff ff ff ff ff ff ff ff ff ff ff                            
+7f0: ff ff ff ff ff ff ff ff ff ff ff ff 00 02 00 03                            
+                                                                                
+Verify                                                                          
+------                                                                          
+verify: 0 errors                                                                
 ```
 
+Using the Arduino EEPROM programmer I have programmed an EEPROM, and connected it to an 6502.
+
+![6502 with EEPROM](eeprom.png)
+
+Since we are still using a Nano for the clock, we can still trace. 
+This is the result.
 
 ```
 Welcome to AddrDataSpy6502
@@ -124,4 +180,5 @@ Welcome to AddrDataSpy6502
 1653054528us 002 1 ff
 1653056464us 003 1 ff
 ```
-To be written (2019 aug 18)
+
+Note that we also tried IRQ, but since there is no RAM yet, this crashes (when popping the return address using `RTI`).
