@@ -74,6 +74,11 @@ verify: 0 errors
 ```
 
 Using the Arduino EEPROM programmer I have programmed an EEPROM, and connected it to an 6502.
+The Nano will run the [address and data tracer]("../2emulation/addrdataspy6502") from the previous chapter.
+We have wired the EEPROM to be always in output mode (nCE and nOE are connected to GND).
+The Nano firmware ensures that data pins are always in input mode. That is safe.
+But the 6502 data pins could be in output as well (when the 6502 pushes or stores).
+Therefore, I have added resistors between the EEPROM and the 6502.
 
 ![6502 with EEPROM](eeprom.png)
 
