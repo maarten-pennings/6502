@@ -522,7 +522,7 @@ struct cmd_desc_s cmd_descs[] = {
   { cmd_main_read  , "read", "read EEPROM memory", cmd_read_longhelp },
   { cmd_main_write , "write", "write EEPROM memory", cmd_write_longhelp },
   { cmd_main_verify, "verify", "verify EEPROM memory", cmd_verify_longhelp },
-  { cmd_main_write , "program", "write and verify and verify EEPROM memory", cmd_program_longhelp },
+  { cmd_main_write , "program", "write and verify EEPROM memory", cmd_program_longhelp },
   { cmd_main_erase , "erase", "erases EEPROM memory", cmd_erase_longhelp },
   { 0,0,0,0 }
 };
