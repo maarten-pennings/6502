@@ -17,7 +17,9 @@ I also found a [Youtube video by Ben Eater](https://youtu.be/K88pgWhEb1M)
 that explained how to make a programmer for it using a Nano.
 
 
-## EEPROM programmer - design
+## EEPROM programmer
+
+### Design of the EEPROM programmer
 
 Programming the [AT28C16](https://opencircuit.shop/ProductInfo/1001018/CAT28C16A-Datasheet.pdf) is fairly simple.
 In steady state, the chip is powered (VC, VSS) and enabled (nOE).
@@ -51,7 +53,7 @@ Then I decided to add two buttons that allow the user (with the help of the Nano
 So, this is an alternative to the USB interface, but only allows reading.
 
 
-## EEPROM programmer - hardware
+### Hardware of the EEPROM programmer
 
 This is the schematic of my _Arduino EEPROM programmer_:
 
@@ -62,7 +64,7 @@ And this a picture of my breadboard:
 ![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
 
 
-## EEPROM programmer - firmware
+### Firmware of the EEPROM programmer
 
 The Nano in the Arduino EEPROM programmer needs a sketch.
 I ended up with nearly a "product quality" [sketch](eeprom-programmer).
@@ -82,16 +84,20 @@ Such a file could be called an EEPROM programming script.
 > You should typically configure the terminal to have a per character or per line delay when sending files.
 > I use a line delay of 25ms.
 
-Two example scripts are given. The first [script](eeprom-programmer/inx-loop.txt) 
-uses series of `write` commands. The second [script](eeprom-programmer/main33inc-isr44inc.txt) is more elaborated.
+Some example scripts are given. Two [inx-loop](eeprom-programmer/inx-loop.txt) and 
+[stx-inx-loop](eeprom-programmer/stx-inx-loop.txt) uses series of `write` commands. 
+The third [script](eeprom-programmer/main33inc-isr44inc.txt) is more elaborated.
 It uses streaming mode, `echo` commands to keep track of progress, and verifies if writing was succesful.
 It is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
 We used it for the experiment started in the next section.
 
 
-## 6502 with EEPROM - program
+## 6502 with EEPROM and Nano 
 
-We use the same program as in the previous section.
+In this section, we are going to load an EEPROM with a program, hook the EEPROM to the 6502 and let it run.
+To confirm correctness, we trace it with a Nano. The Nano thus also acts as clock.
+
+For the 6502, we use the third program from the previous section.
 The main loop increments zero pages address 33 
 and the ISR routine (when an interrupt occurs) increments zero page address 44.
 
@@ -145,9 +151,7 @@ Verify
 verify: 0 errors                                                              
 ```
 
-## 6502 with EEPROM - hardware
-
-Using the Arduino EEPROM programmer I have programmed an EEPROM, and connected it to an 6502.
+Once the EEPROM is programmed, we connect it to an 6502.
 The Nano will run the [address and data tracer]("../2emulation/addrdataspy6502") from the previous chapter.
 
 We have wired the EEPROM to be always in output mode (nCE and nOE are connected to GND).
@@ -157,15 +161,13 @@ Therefore, I have added resistors between the EEPROM and the 6502.
 
 Here are the schematics
 
-![6502 with EEPROM schematics](eeprom.png)
+![6502 with EEPROM schematics](eeprom-nano.png)
 
 and here is a picture of my board 
 (the second button hooks to the reset of the Nano, I couldn't reach it trough all the wires so I added some more :-)
 
-![6502 with EEPROM board](eeprom.jpg)
+![6502 with EEPROM board](eeprom-nano.jpg)
 
-
-## 6502 with EEPROM - run
 
 Since we are still using a Nano for the clock, we can still trace. 
 This is the result.
@@ -272,3 +274,54 @@ Welcome to AddrDataSpy6502
 ```
 
 Note that we also tried IRQ, but since there is no RAM yet, this crashes (when popping the return address using `RTI`).
+
+## 6502 with EEPROM and oscillator
+
+Would the EEPROM also work on full speed; 1MHz from a oscillator.
+The problem is how to verify that.
+My idea is to trace 4 address lines, the reset and the clock on an oscilloscope or logic analyser.
+This is going to be painfull, so let's first switch to a simple program.
+
+```
+7fc 00 07    # * = 700
+700 A2 00    #        LDX #$00 
+702 E8       # LOOP   INX      
+703 4C 02 07 #        JMP LOOP
+```
+
+One of the [demo scripts](eeprom-programmer/inx-loop.txt) is the script for the Arduino EEPROM programmer.
+We flashed the EEPROM, and put it in the board with the Nano, to verify the trace.
+Here we see the loop unroll.
+
+```
+2415296us 302 1 e8                                                            
+2417168us 303 1 4c                                                            
+2419024us 303 1 4c                                                            
+2420912us 304 1 02                                                            
+2422776us 305 1 07                                                            
+2424648us 302 1 e8                                                            
+2426504us 303 1 4c                                                            
+2428376us 303 1 4c                                                            
+2430256us 304 1 02                                                            
+2432128us 305 1 07                                                            
+2433984us 302 1 e8                                                            
+2435856us 303 1 4c                                                            
+2437736us 303 1 4c                                                            
+2439608us 304 1 02                                                            
+2441464us 305 1 07                                                            
+```
+
+Next, we made the board with the 6502, EEPROM and oscillator.
+At the bottom you see the wires for the logic analyser.
+
+![6502 with EEPROM and oscillator schematics](eeprom-osc.png)
+
+here is the schematics
+
+![6502 with EEPROM and oscillator board](eeprom-osc.jpg)
+
+The trace on the logic analyser matches the trace by the Nano.
+
+![6502 with EEPROM trace](eeprom-osc-trace.png)
+
+
