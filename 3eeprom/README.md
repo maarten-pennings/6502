@@ -2,15 +2,56 @@
 Trying to build a 6502 based computer.
 
 We need a memory to store a program that executes on reset.
-This program could be a basic interpreter or monitor.
+This program could be, for example, a basic interpreter, a monitor or some OS shell.
 This memory needs to preserve data over power down.
-So we go for a ROM, actually a programmable ROM (PROM).
-We make mistakes so let it be an EPROM (eraseble PROM), 
-and in this age that will be an EEPROM (electrically erasable PROM).
+So we go for a ROM, actually a _programmable_ ROM, a PROM.
+We make mistakes so let it be an eraseble PROM, a EPROM, 
+and in this age that will be an electrically erasable PROM, an EEPROM.
 
-I found the AT28C16, a 2kB EEPROM.
+So, we will attach an EEPROM to our 6502, so that the 6502 has code to execute upon reset.
+We get another problem: how do we program that EEPROM.
+With an EEPROM programmer.
+
+I found the [AT28C16](https://www.aliexpress.com/item/32984222148.html), a 2kB EEPROM.
 I also found a [Youtube video by Ben Eater](https://youtu.be/K88pgWhEb1M) 
 that explained how to make a programmer for it using a Nano.
+
+
+## EEPROM programmer - design
+
+Programming the [AT28C16](https://opencircuit.shop/ProductInfo/1001018/CAT28C16A-Datasheet.pdf) is fairly simple.
+In steady state, the chip is powered (VC, VSS) and enabled (nOE).
+To write a byte, set an address on its 11 address lines, data on its 8 data lines, and pulse nWE.
+To read a byte, set an address on its 11 address lines, pull nOE low, read data from the 8 data lines, and release nOE to high.
+
+We can write Nano firmware to do that.
+One complication is that we need 8 data wires, 2 control wires (nWE, nOE) and 11 address wires.
+The Nano does not have that. So we follow Ben's approach and use a shift register for the address wires.
+
+Not for the data wires, because we want to read those as well.
+And not for the control wires, because we want to time the pulses indenpedent from the address line changes.
+
+The idea is to write firmware implements a command interpreter, which that allows 
+commands (over UART/USB) to write bytes to memory locations
+
+```
+  >> write 7FC 00 02
+  >> write 200 A9 00 85 33
+```
+
+but also has commands to read memory locations
+
+```
+  >> read 200 8
+  200: A9 00 85 33 FF FF FF FF
+```
+
+I added LEDs to get feedback on the commands, and I liked that so much that I put them on all data and address lines.
+Then I decided to add two buttons that allow the user (with the help of the Nano) to go to next or previous address.
+So, this is an alternative to the USB interface, but only allows reading.
+
+
+## EEPROM programmer - hardware
 
 This is the schematic of my _Arduino EEPROM programmer_:
 
@@ -20,29 +61,59 @@ And this a picture of my breadboard:
 
 ![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
 
+
+## EEPROM programmer - firmware
+
 The Nano in the Arduino EEPROM programmer needs a sketch.
-With [this sketch](eeprom-programmer) you can connect to the Nano via a terminal program (UART over USB), 
+I ended up with nearly a "product quality" [sketch](eeprom-programmer).
+If you want less, copy only the "EEPROM" section.
+
+You can connect to the Nano via a terminal program (UART over USB), 
 and give the Nano commands to write or read EEPROM locations. 
+See below for a demo session.
 
-The programmer has LEDs which show the current address and data.
-The two buttons allows the user to go to next or previous address.
-So, this is an alternative to the USB interface, but only allows reading.
+![Terminal on the Arduino EEPROM programmer](terminal.png)
 
-Instead of entering commands manually over the UART/USB, one can also send a file 
-(keep in mind that the Nano is less fast then your PC, so you should typically configure 
-the terminal to have a character or line delay - I use a line delay of 10ms).
+Instead of entering commands manually over the UART/USB, one can also send a file with commands.
 Such a file could be called an EEPROM programming script.
-Two example scripts are given
- - [simple](eeprom-programmer/inx-loop.txt)
- - [elaborated](eeprom-programmer/main33inc-isr44inc.txt)
 
-The latter script is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
-This is the output of the script.
+> Keep in mind that the Nano is less fast then your PC.
+> So the PC will send to characters in the file so fast to the Nano that it can't keep up.
+> You should typically configure the terminal to have a per character or per line delay when sending files.
+> I use a line delay of 25ms.
 
+Two example scripts are given. The first [script](eeprom-programmer/inx-loop.txt) 
+uses series of `write` commands. The second [script](eeprom-programmer/main33inc-isr44inc.txt) is more elaborated.
+It uses streaming mode, `echo` commands to keep track of progress, and verifies if writing was succesful.
+It is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
+We used it for the experiment started in the next section.
+
+
+## 6502 with EEPROM - program
+
+We use the same program as in the previous section.
+The main loop increments zero pages address 33 
+and the ISR routine (when an interrupt occurs) increments zero page address 44.
 
 ```
->> @echo disable                                                                
-                                                                                
+0200 MAIN
+0200        CLI
+0201        LDA #$00
+0203        STA *$33
+0205        STA *$44
+0207 LOOP
+0207        INC *$33
+0209        JMP LOOP
+
+0300 ISR
+0300        INC *$44
+0302        RTI
+```
+
+To write this program to the EEPROM we wrote this [script](eeprom-programmer/main33inc-isr44inc.txt).
+When sending it via a terminal to the Arduino EEPROM programmer, this is the output.
+
+```
 Program MAIN                                                                    
 ------------                                                                    
 7fc: 00 02                                                                      
@@ -52,7 +123,8 @@ Program MAIN
 203: 85 33                                                                      
 205: 85 44                                                                      
 207: e6 33                                                                      
-209: *)                                                                         
+209: 4c 07 02                                                                   
+20c: *)                                                                         
                                                                                 
 Program ISR                                                                     
 -----------                                                                     
@@ -64,23 +136,36 @@ Program ISR
                                                                                 
 Dump                                                                            
 ----                                                                            
-200: 58 a9 00 85 33 85 44 e6 33 ff ff ff ff ff ff ff                            
+200: 58 a9 00 85 33 85 44 e6 33 4c 07 02 ff ff ff ff                            
 300: e6 44 40 ff ff ff ff ff ff ff ff ff ff ff ff ff                            
 7f0: ff ff ff ff ff ff ff ff ff ff ff ff 00 02 00 03                            
                                                                                 
 Verify                                                                          
 ------                                                                          
-verify: 0 errors                                                                
+verify: 0 errors                                                              
 ```
+
+## 6502 with EEPROM - hardware
 
 Using the Arduino EEPROM programmer I have programmed an EEPROM, and connected it to an 6502.
 The Nano will run the [address and data tracer]("../2emulation/addrdataspy6502") from the previous chapter.
+
 We have wired the EEPROM to be always in output mode (nCE and nOE are connected to GND).
 The Nano firmware ensures that data pins are always in input mode. That is safe.
 But the 6502 data pins could be in output as well (when the 6502 pushes or stores).
 Therefore, I have added resistors between the EEPROM and the 6502.
 
-![6502 with EEPROM](eeprom.png)
+Here are the schematics
+
+![6502 with EEPROM schematics](eeprom.png)
+
+and here is a picture of my board 
+(the second button hooks to the reset of the Nano, I couldn't reach it trough all the wires so I added some more :-)
+
+![6502 with EEPROM board](eeprom.jpg)
+
+
+## 6502 with EEPROM - run
 
 Since we are still using a Nano for the clock, we can still trace. 
 This is the result.
