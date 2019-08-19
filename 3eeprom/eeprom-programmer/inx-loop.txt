@@ -1,0 +1,5 @@
+write 7fc 00 07
+
+write 700 A2 00    #        LDX #$00 
+write 702 E8       # LOOP   INX      
+write 703 4C 02 07 #        JMP LOOP
