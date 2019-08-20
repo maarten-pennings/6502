@@ -1,0 +1,59 @@
+@echo disable
+# Two loops at different addresses: put LED on A4 for blinky
+# 2019 aug 20, Maarten Pennings
+@verify clear
+
+echo line
+echo Program MAIN
+echo ------------
+
+program 200 *
+         # 0200 SUB1   
+98       # 0200        TYA             
+AA       # 0201        TAX             
+         # 0202 LOOP1  
+A9 50    # 0202        LDA #$50        
+         # 0204 LOOP1I 
+38       # 0204        SEC             
+69 00    # 0205        ADC #$00        
+D0 FB    # 0207        BNE LOOP1I      
+CA       # 0209        DEX             
+D0 F6    # 020A        BNE LOOP1       
+88       # 020C        DEY             
+4C 10 02 # 020D        JMP SUB2        
+         # 
+         # 0210 SUB2   
+98       # 0210        TYA             
+AA       # 0211        TAX             
+         # 0212 LOOP2  
+A9 50    # 0212        LDA #$50        
+         # 0214 LOOP2I 
+38       # 0214        SEC             
+69 00    # 0215        ADC #$00        
+D0 FB    # 0217        BNE LOOP2I      
+CA       # 0219        DEX             
+D0 F6    # 021A        BNE LOOP2       
+88       # 021C        DEY             
+4C 00 02 # 021D        JMP SUB1        
+*
+
+echo line
+echo Program vectors
+echo ---------------
+
+program 7fc 00 02
+
+echo line
+echo Dump
+echo ----
+
+r 200 20
+r 7f0 10
+
+echo line
+echo Verify
+echo ------
+verify print
+
+echo line
+@echo enable

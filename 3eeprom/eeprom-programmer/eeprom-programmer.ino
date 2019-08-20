@@ -1,6 +1,11 @@
 // Arduino EEPROM programmer (for the AT28C16)
 // Features a complete command interpreter
 
+// Todo:
+// - maybe: add shift registers with latches so that we don't see the LEDs flicker
+// - detect lost characters in uart transmission
+
+
 #define PROG_NAME    "Arduino EEPROM programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
 #define PROG_VERSION "5"
