@@ -89,13 +89,15 @@ Such a file could be called an EEPROM programming script.
 > You should typically configure the terminal to have a per character or per line delay when sending files.
 > I use a "line delay" of 25ms.
 
-Some example scripts are given. Two [inx-loop](eeprom-programmer/inx-loop.txt) and 
-[stx-inx-loop](eeprom-programmer/stx-inx-loop.txt) uses series of `write` commands. 
-The third [script](eeprom-programmer/main33inc-isr44inc.txt) is more elaborated.
-It uses streaming mode, `echo` commands to keep track of progress, comments with `#`, 
+Some example scripts are given. Two, [inx-loop](eeprom-programmer/inx-loop.txt) and 
+[stx-inx-loop](eeprom-programmer/stx-inx-loop.txt), uses series of `write` commands. 
+Two others, [main33inc-isr44inc](eeprom-programmer/main33inc-isr44inc.txt) 
+and [blinky](eeprom-programmer/blinky.txt) are more elaborated.
+They use streaming mode, `echo` commands to keep track of progress, comments with `#`, 
 and verifies at the end of the script if writing was successful.
+
 The third program is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
-We will now use it again.
+We will now use it again. The fourth (blinky) will be used at the end of the chapter.
 
 
 ## 6502 with EEPROM and Nano 
