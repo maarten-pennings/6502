@@ -331,3 +331,87 @@ The trace on the logic analyser matches the trace by the Nano.
 ![6502 with EEPROM trace](eeprom-osc-trace.png)
 
 
+## Blinky
+
+The previous section was a major milestone: a 6502 clocked by an oscillator and running a program from EEPROM.
+Nearly a complete computer, exceot for the RAM. But we also miss perhiperals like GPIO or UART. Maybe at some
+stage my project will have those, but not now. So how can we make the "Hello, world!" of embedded software, a _blinky_?
+
+The trick that I cooked up was having two wait loops. One wait loop running in address range A, the other wait loop
+running in address range B. Range A will have the form like aaaaaaaaaaaaxxxx, where the a's are stable bits and the x's vary.
+Similarly, range B will have the form like bbbbbbbbbbbbxxxx, where the b's are stable bits and the x's vary.
+And then, since the loops are at two different locations, aaaaaaaaaaaa and bbbbbbbbbbbb are different. So there is some
+position where the a differs from the b. Too abstract?
+
+Look at these two routines `sub1` and `sub2`. 
+They are the same, except that at the end, 1 jumps to 2 and 2 jumps to 1.
+
+```
+0200 SUB1   
+0200        TYA       
+0201        TAX       
+0202 LOOP1  
+0202        LDA #$50  
+0204 LOOP1I 
+0204        SEC       
+0205        ADC #$00  
+0207        BNE LOOP1I
+0209        DEX       
+020A        BNE LOOP1 
+020C        DEY       
+020D        JMP SUB2  
+
+0210 SUB2   
+0210        TYA       
+0211        TAX       
+0212 LOOP2  
+0212        LDA #$50  
+0214 LOOP2I 
+0214        SEC       
+0215        ADC #$00  
+0217        BNE LOOP2I
+0219        DEX       
+021A        BNE LOOP2 
+021C        DEY       
+021D        JMP SUB1  
+```
+
+What does each sub do?
+On high level, it waits `Y` loops. 
+`Y` is one of the 6502 registers, and it is the input parameter for the sub.
+It is also the output parameter of the sub, because the sub decreases it by 1 (see the `DEY` on 020C).
+Note that `Y` is decremented every sub call, so it will reach zero and wrap around.
+And this happens continuously, so I didn't care about a start value of `Y`.
+
+But again, both subs wait `Y`.
+
+How do they do that? They transfer `Y` to `X` (via `A` because there is no instruction to move `Y` to `X`). 
+That is the `TYA` and `TAX` on 0200 and 0201.
+Next come two nested loops. The outer loop does a `DEX` (0209) and `BNE LOOP` (020A). 
+So indeed, `X` counts from `Y` to `0`.
+
+To waste some "serious" time, there is an inner loop. The `A` is loaded with 50 (some arbitrary number).
+In the inner loop we add a carry to `A` (the set-carry `SEC` and add-with-carry `ADC #00`) until `A` wraps around and is 0.
+
+So, `sub1` delays `Y`, then jumps to `sub2`, `sub2` delays `Y` then jumps to `sub1`.
+Both subs decrement `Y` so the alternation between the two subs is faster and faster.
+
+How does this make a blinky? 
+Let's look at the address patterns.
+
+```
+During the first sub, the address lines have the pattern 0000 0010 0000 xxxx.
+During the first sub, the address lines have the pattern 0000 0010 0001 xxxx.
+This position we have a changing bit                                  ^
+                                                                      |
+```
+
+So I hooked a LED to A4.
+
+The complete sketch is available as [script](../eeprom-programmer/blinky.txt) for my Arduino EEPROM programmer.
+Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#6502-with-EEPROM-and-oscillator).
+
+And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
+
+
+
