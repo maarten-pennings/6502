@@ -10,7 +10,11 @@ But it is time to understand ... time.
 Timing of the 6502 and memories.
 
 ## Timing
-The datasheet of the 6502 has timing diagrams. The figure below was taken from the R65C02 datasheet.
+The datasheet of the 6502 has timing diagrams. In this section we'll examine them
+
+### Timing diagrams
+
+The figure below was taken from the R65C02 datasheet.
 I did remove some non-6502 aspects, and I use 1MHz version as context.
 
 ![6502 timing diagram](6502timing.png)
@@ -26,6 +30,8 @@ Those diagrams are packed with information. Take your time to study them. Some o
 - 50ns is a modest interval, compared to the "Cycle Time" tCYC of 1000ns (or 1us, recall, we run at 1MHz), but still 5%.
 - Note also that (rising and falling) edges have horizontal tick lines that mark the moment the signal is considered high or low.
 
+### Clocks
+
 The 6502 is fed with a clock, this signal is the "ϕ0 (IN)" at the top of the diagram. 
 In the diagram below I made the ϕ0 curve green.
 
@@ -33,7 +39,10 @@ In the diagram below I made the ϕ0 curve green.
 
 - The green ϕ0 signal is an input for the 6502 (we can not see that from the timing diagram).
 - The 6502 derives two output signals from it: ϕ1 and ϕ2. 
-- The ϕ2 is the basis for other timings, it is an important signal, I made it blue (i did not color ϕ1)
+  Within the 6502, ϕ0 is not used other then to generate ϕ1 and ϕ2. The 6502 itself uses ϕ1 and ϕ2 for timing purposes. 
+  ϕ1 and ϕ2 are made available to external devices so that they can synchronize with the 6502.
+  Also ϕ1 and ϕ2 are can drive higher loads than what the oscillator (which drives ϕ0) may drive.
+- The ϕ2 is the basis for other timings, it is an important signal, I made it blue (I did not color ϕ1)
 - Note that the ϕ2 signal is nearly identical to ϕ0; the only difference is a shift of tDLY, which is max 50 ns.
 - Note that the ϕ1 signal is the _inverse_ of ϕ0; and it is also a bit delayed with respect to ϕ0.
 - See the importance of ϕ2: the time of ϕ1 is specified with ϕ2 as basis (tDLY1), and not ϕ0 as basis.
@@ -42,7 +51,9 @@ In the diagram below I made the ϕ0 curve green.
 - I made two vertical lines red: they are the anchors for other events during a clock pulse.
 - Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
   of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
-  
+
+### Read
+
 In the diagram below I have removed most of the clock clutter and other signals, so that we can focus on the timing behavior 
 of memory access. Let's first have a look at the _read_ process.
 
@@ -67,11 +78,38 @@ of memory access. Let's first have a look at the _read_ process.
 - Note that the "hatched" section in row "D0-D7 (READ)" shows the interval in which the data lines vary (hence the hatching). 
   The memory chip is raising/lowering the data lines given the states of the address lines and R/nW. 
   The memory chip has the complete clock cycle (1000ns) for that minus tADS (125ns) and tDUS (100ns).
-- When the cycle time grows (lower clock frequency), the time for the memory chips grows since the tADS and TDUS stay equal.
+- When the cycle time grows (lower clock frequency), the time for the memory chips grows since the tADS and tDUS stay equal.
+
+> **My conclusion for a read cycle.** The 6502 will put address on A0-A15, and 1 on R/nW.
+> If the memory chip is enabled (address decoding), and output is enabled (from R/nW), the memory chip will put data on D0-D7.
+> The data lines must remain stable till tHR after the falling edge of ϕ2 so that the 6502 can clock then in.
+
+> Only gate output enable of the memory chip with R/nW, and _not_ with ϕ2.
+
+This last conclusion contradicts [Grant's 6502 computer](http://searle.hostei.com/grant/6502/Simple6502.html)
+and that scares me. He much better than me at this.
+
+
+### Write
 
 The diagram below focusses on the timing behavior of the _write_ process.
 
 ![6502 timing diagram write](6502timing-write.png)
 
+- The key observation when ϕ2 is low the 6502 is setting up A0-A15, R/nW _and_ D0-D7.
+- At least "Write data delay Time" (tWDS, 200ns) after the rising edge of ϕ2, D0-D7 is available.
+- The 6502 will keep D0-D7 stable until at least "Write Data Hold Time" (tHW, 30ns) after the falling edge of ϕ2.
 
+> **My conclusion for a write cycle.** The 6502 will put address on A0-A15, 0 on R/nW and data on D0-D7.
+> The memory chip should be enabled (address decoding), and write should be enabled (from R/nW) until ϕ2 falls.
+> Not longer, because soon after that the address lines will change.
+
+> Gate write enable of the memory chip with R/nW, _and_ with ϕ2.
+
+
+### Wiring
+
+The conclusions for the read and write scenarios leads to this writing schematic:
+
+![memory read/write wiring](mem-rw-enable.png)
 
