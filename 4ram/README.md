@@ -43,11 +43,31 @@ In the diagram below I made the ϕ0 curve green.
 - Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
   of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
   
-In the diagram below I have removed most of the clock clutter, so that we can focus on the timing behavior 
-of the _read_ process.
+In the diagram below I have removed most of the clock clutter and other signals, so that we can focus on the timing behavior 
+of memory access. Let's first have a look at the _read_ process.
 
 ![6502 timing diagram read](6502timing-read.png)
 
+- The key observation is that the 6502 clocks in the data when ϕ2 goes low. This is the red circle in the diagram.
+  In other words, irrespective of the cycle time: **data read is on falling edge of ϕ2**. 
+- Of course the data signal must be stable around that moment. That is the "diamond" enclosed in blue interval lines.
+- "Read Data **Setup** Time" (tDSU) specifies that the data must be available at least 100ns before the falling edge.
+- "Read Data **HOLD** Time" (tHR) specifies that the data must be stable until at least 10ns after the falling edge.
+- The memory chip must supply that data (by raising/lowering) the data lines, but can only do that after the address 
+  of the read location is know.
+- The 6502 guarantees that the _address_ lines are available after ϕ2 goes low 
+  with a delay of at most tADS "Address Delay Time" (125ns, green, left).
+- The 6502 guarantees that the _address_ lines are stable until after ϕ2 goes low again 
+  with a delay of at least tHA "Address Hold Time" (15ns, green, right).
+- On top of that, the memory chip must also know that the action is a read action. The 6502 must set the R/nW line to 0 (read). 
+- The 6502 guarantees that the _R/nW_ line is available after ϕ2 goes low 
+  with a delay of at most tRWS "R/nW Delay Time" (125ns, green, left).
+- The 6502 guarantees that the _R/nW_ line is stable until after ϕ2 goes low again 
+  with a delay of at least tHRW "R/nW Hold Time" (15ns, green, right).
+- Note that the "hatched" section in row "D0-D7 (READ)" shows the interval in which the memory chip can raise/lower 
+  the data lines. In this interval the data lines vary (hence the hatching). 
+  The memory chip has nearly the complete cycle (1000ns) for that; only the tADS (125ns) and tDUS (100ns) need to be respected.
+  
 
 
 
