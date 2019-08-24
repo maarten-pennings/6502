@@ -52,7 +52,7 @@ of memory access. Let's first have a look at the _read_ process.
   In other words, irrespective of the cycle time: **data read is on falling edge of ϕ2**. 
 - Of course the data signal must be stable around that moment. That is the "diamond" enclosed in blue interval lines.
 - "Read Data **Setup** Time" (tDSU) specifies that the data must be available at least 100ns before the falling edge.
-- "Read Data **HOLD** Time" (tHR) specifies that the data must be stable until at least 10ns after the falling edge.
+- "Read Data **Hold** Time" (tHR) specifies that the data must be stable until at least 10ns after the falling edge.
 - The memory chip must supply that data (by raising/lowering) the data lines, but can only do that after the address 
   of the read location is know.
 - The 6502 guarantees that the _address_ lines are available after ϕ2 goes low 
