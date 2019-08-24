@@ -10,7 +10,8 @@ But it is time to understand ... time.
 Timing of the 6502 and memories.
 
 ## Timing
-The datasheet of the 6502 has timing diagrams. In this section we'll examine them
+The [datasheet](http://archive.6502.org/datasheets/rockwell_r65c00_microprocessors.pdf) of the 
+6502 has timing diagrams. In this section we'll examine them.
 
 ### Timing diagrams
 
@@ -84,10 +85,10 @@ of memory access. Let's first have a look at the _read_ process.
 > If the memory chip is enabled (address decoding), and output is enabled (from R/nW), the memory chip will put data on D0-D7.
 > The data lines must remain stable till tHR after the falling edge of ϕ2 so that the 6502 can clock then in.
 
-> Only gate output enable of the memory chip with R/nW, and _not_ with ϕ2.
+> Only gate _output enable_ of the memory chip with R/nW, and _not_ with ϕ2 (because then we miss tHR).
 
 This last conclusion contradicts [Grant's 6502 computer](http://searle.hostei.com/grant/6502/Simple6502.html)
-and that scares me. He much better than me at this.
+and that scares me. He's much better than me at this.
 
 
 ### Write
@@ -96,20 +97,32 @@ The diagram below focusses on the timing behavior of the _write_ process.
 
 ![6502 timing diagram write](6502timing-write.png)
 
-- The key observation when ϕ2 is low the 6502 is setting up A0-A15, R/nW _and_ D0-D7.
-- At least "Write data delay Time" (tWDS, 200ns) after the rising edge of ϕ2, D0-D7 is available.
+- The key observation: when ϕ2 is low the 6502 is setting up A0-A15, R/nW _and_ D0-D7.
+- At least "Write Data Delay Time" (tWDS, 200ns) after the rising edge of ϕ2, D0-D7 is available.
 - The 6502 will keep D0-D7 stable until at least "Write Data Hold Time" (tHW, 30ns) after the falling edge of ϕ2.
 
 > **My conclusion for a write cycle.** The 6502 will put address on A0-A15, 0 on R/nW and data on D0-D7.
 > The memory chip should be enabled (address decoding), and write should be enabled (from R/nW) until ϕ2 falls.
 > Not longer, because soon after that the address lines will change.
 
-> Gate write enable of the memory chip with R/nW, _and_ with ϕ2.
+> Gate _write enable_ of the memory chip with R/nW, _and_ with ϕ2.
 
 
 ### Wiring
 
-The conclusions for the read and write scenarios leads to this writing schematic:
+The conclusions for the read and write scenarios leads to this schematic.
+Do note that most memory chips have the input signals _ouput enable_ and _write enable_ (and yes, even _chip enable_) low active.
 
 ![memory read/write wiring](mem-rw-enable.png)
+
+
+## Adding RAM
+
+### Memory map
+
+### Address decoding
+
+### Schematic
+
+### New firmware
 
