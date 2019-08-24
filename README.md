@@ -37,13 +37,21 @@ The Nano was fun, but this was a hardware project, not a software project.
 So, we keep the Nano to run the clock and use it to sample the address and data bus for tracing purposes.
 But we add a real memory.
 RAM would have advantages (can hold code and data), but I don't know how to fill that with code.
-So let's first add EEPROM.
+So let's first add EEPROM. With that working, we replace the Nano with a real oscillator.
 
 The [third chapter](3eeprom/README.md) explains how to hook up an EEPROM to the 6502. 
+
 And as a side project we develop an EEPROM programmer so that the 6502 has some code to work on
 (and the Nano has some code to spy on).
 
+
 ## 4 RAM
+One could argue that the previous chapter resulted in a real computer: oscillator, CPU, EEPROM with a running program.
+The problem is that the only (RAM) memory the program used was the (A,X and Y) registers.
+
+In chapter [four](4ram/README.md) we add a RAM.
+
+As a side project, we study timing.
 
 
 ## 5 GPIO
