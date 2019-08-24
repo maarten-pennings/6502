@@ -11,7 +11,7 @@ Timing of the 6502 and memories.
 
 ## Timing
 The datasheet of the 6502 has timing diagrams. The figure below was taken from the R65C02 datasheet.
-I did remove some non-6502 aspects.
+I did remove some non-6502 aspects, and I use 1MHz version as context.
 
 ![6502 timing diagram](6502timing.png)
 
@@ -37,6 +37,17 @@ In the diagram below I made the ϕ0 curve green.
 - Note that the ϕ2 signal is nearly identical to ϕ0; the only difference is a shift of tDLY, which is max 50 ns.
 - Note that the ϕ1 signal is the _inverse_ of ϕ0; and it is also a bit delayed with respect to ϕ0.
 - See the importance of ϕ2: the time of ϕ1 is specified with ϕ2 as basis (tDLY1), and not ϕ0 as basis.
-- The datasheet specifies tDLY1 as "ϕ0 Low to ϕ1 High Skew" and ranges from -20 to +20 ns.
-- Be alert to that: tDLY2 could be -20, which means its (rising) edge is actually _after_ the (falling) edge of ϕ2.
+- The datasheet specifies tDLY1 as "ϕ0 Low to ϕ1 High Skew" and ranges from -20ns to +20ns.
+- Be alert to that: tDLY2 could be _negative_, which means its (rising) edge is actually _after_ the (falling) edge of ϕ2.
 - I made two vertical lines red: they are the anchors for other events during a clock pulse.
+- Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
+  of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
+  
+In the diagram below I have removed most of the clock clutter, so that we can focus on the timing behavior 
+of the _read_ process.
+
+![6502 timing diagram read](6502timing-read.png)
+
+
+
+
