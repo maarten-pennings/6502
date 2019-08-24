@@ -64,10 +64,14 @@ of memory access. Let's first have a look at the _read_ process.
   with a delay of at most tRWS "R/nW Delay Time" (125ns, green, left).
 - The 6502 guarantees that the _R/nW_ line is stable until after ϕ2 goes low again 
   with a delay of at least tHRW "R/nW Hold Time" (15ns, green, right).
-- Note that the "hatched" section in row "D0-D7 (READ)" shows the interval in which the memory chip can raise/lower 
-  the data lines. In this interval the data lines vary (hence the hatching). 
-  The memory chip has nearly the complete cycle (1000ns) for that; only the tADS (125ns) and tDUS (100ns) need to be respected.
-  
+- Note that the "hatched" section in row "D0-D7 (READ)" shows the interval in which the data lines vary (hence the hatching). 
+  The memory chip is raising/lowering the data lines given the states of the address lines and R/nW. 
+  The memory chip has the complete clock cycle (1000ns) for that minus tADS (125ns) and tDUS (100ns).
+- When the cycle time grows (lower clock frequency), the time for the memory chips grows since the tADS and TDUS stay equal.
+
+The diagram below focusses on the timing behavior of the _write_ process.
+
+![6502 timing diagram write](6502timing-write.png)
 
 
 
