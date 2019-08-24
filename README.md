@@ -25,29 +25,29 @@ The [first chapter](1clock/README.md) discusses three options:
  - Since many have it available: you could also use an Arduino Nano as clock source.
 
 ## 2 Emulation
-The Nano as clock source was not only easy, it also gave me a nice idea.
+The Nano as clock source was not only easy, it also gave me an idea.
 When the Nano controls the clock, it also knows when to sample the address lines. 
-We then have a spy that can follow each step.
-That appeared to work very well, as discussed in the [second chapter](2emulation/README.md).
+We then have a _spy_ that can follow each (clock) step.
+
+That appeares to work very well, as discussed in the [second chapter](2emulation/README.md).
 Would it even be possible to sample the data lines? Yes! and spoof the data lines? Yes!
 The Nano now emulates a memory in addition to a clock.
 
 ## 3 EEPROM
-The Nano was fun, but this was a hardware project, not a software project.
+The Nano was fun, but this is a hardware project, not a software project.
 So, we keep the Nano to run the clock and use it to sample the address and data bus for tracing purposes.
 But we add a real memory.
-RAM would have advantages (can hold code and data), but I don't know how to fill that with code.
+RAM would have advantages (can hold code and data), but I don't know how to fill the RAM with (initial) code.
 So let's first add EEPROM. With that working, we replace the Nano with a real oscillator.
 
 The [third chapter](3eeprom/README.md) explains how to hook up an EEPROM to the 6502. 
-
 And as a side project we develop an EEPROM programmer so that the 6502 has some code to work on
 (and the Nano has some code to spy on).
 
 
 ## 4 RAM
 One could argue that the previous chapter resulted in a real computer: oscillator, CPU, EEPROM with a running program.
-The problem is that the only (RAM) memory the program used was the (A,X and Y) registers.
+The problem is that the only (RAM) memory the program used was the (A, X and Y) registers.
 
 In chapter [four](4ram/README.md) we add a RAM.
 
