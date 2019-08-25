@@ -39,8 +39,8 @@ echo line
 program 7FC 00 F8 
 
 echo line
-r 000 30
-r 7F0 10
+read 000 30
+read 7F0 10
 
 echo line
 verify print
