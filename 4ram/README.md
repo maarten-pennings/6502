@@ -199,7 +199,7 @@ To test our latest computer, we need firmware. We will recycle our blinky progra
 We cannot reuse because we need to adapt it to the new memory map.
 We make another adaptation: we add an ISR
 
-Our new [sketch](../3eeprom/eeprom-programmer/blinky-top.eeprom) consists of four parts
+Our new [sketch](blinky-top.eeprom) consists of four parts
  - MAIN at F8000, it initializes our program: enabling IRQ.
  - SUB1 loops around on F810-F81F, that is addresses 1111 1000 00**01** xxxx
  - SUB2 loops around on F820-F82F, that is addresses 1111 1000 00**10** xxxx
@@ -215,7 +215,3 @@ The ISQ pushes the return address, and RTI pops it, this proves that RAM is work
 Here is the [video](https://youtu.be/GpOUKbiih6M) to proof it
  
  
-
-
-
-
