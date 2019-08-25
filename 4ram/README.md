@@ -193,6 +193,10 @@ and a simple address decode (blue).
 
 ![Our first complete computer](eeprom-ram.png)
 
+which looks like this on my breadboard
+
+![EEPROM and RAM on breadboard](eeprom-ram.jpg)
+
 ### New firmware
 
 To test our latest computer, we need firmware. We will recycle our blinky program.
