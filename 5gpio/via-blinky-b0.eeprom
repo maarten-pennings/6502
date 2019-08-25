@@ -1,0 +1,46 @@
+@echo disable
+# Control Port B of VIA: Blinky on B.0
+@verify clear
+
+program 000 *
+         # F800 MAIN   
+A9 FF    # F800        LDA #$FF        
+85 02    # F802        STA *$02        
+         # 
+         # F804 LEDOFF 
+A9 00    # F804        LDA #$00        
+85 00    # F806        STA *$00        
+         # F808 START1 
+A2 00    # F808        LDX #$00        
+         # F80A LOOP1O 
+A9 00    # F80A        LDA #$00        
+         # F80C LOOP1I 
+38       # F80C        SEC             
+69 00    # F80D        ADC #$00        
+D0 FB    # F80F        BNE LOOP1I      
+CA       # F811        DEX             
+D0 F6    # F812        BNE LOOP1O      
+         # F814 LEDON  
+A9 FF    # F814        LDA #$FF        
+85 00    # F816        STA *$00        
+         # F818 START2 
+A2 00    # F818        LDX #$00        
+         # F81A LOOP2O 
+A9 00    # F81A        LDA #$00        
+         # F81C LOOP2I 
+38       # F81C        SEC             
+69 00    # F81D        ADC #$00        
+D0 FB    # F81F        BNE LOOP2I      
+CA       # F821        DEX             
+D0 F6    # F822        BNE LOOP2O      
+4C 04 F8 # F824        JMP LEDOFF      
+
+echo line
+program 7FC 00 F8 
+
+echo line
+r 000 30
+r 7F0 10
+
+echo line
+verify print
