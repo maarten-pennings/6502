@@ -144,11 +144,54 @@ Do note that most memory chips have the control signals low active: _ouput enabl
 
 ## Adding RAM
 
-### Memory map
+We are going to complete our computer: add a second memory next to the ROM, a RAM.
+So that finally we can use the zero page (00xx), have stack (01xx), or, well, store program data.
 
 ### Address decoding
 
+In the previous chapter we had a single 2kB EEPROM. It has a data range of 000-800 (hex).
+We only connected 11 address lines of the 6502: A0-A10. The other 5 (A11-A15) were left dangling. 
+This means that we have 32 mirrors of that 2kB. Whichever byte is at, say, 7FC also surfaces 800 higher (FFC), 
+another 800 higher (17FC), another 800 higher (1FFC) and so on, up till FFFC.
+
+We wrote simple programs at low addresses, and stored the reset address at 7FC, knowing it would mirror at FFFC.
+But now we have two memories. If we connect both, in parallel, both would mirror on all locations causing "short circuits".
+We need to enable one for some addresses, and enable the other for other adresses. Memory chips have a _chip enable_
+pin just for this purpose.
+
+Later we migh add other chips (memory mapped IO) and allocating address space all the chips get more elaborated.
+But for now, we can keep it simple. Since RAM needs to be at 0000 (for zero page, stack), and ROM needs to be at FFFC 
+(for reset vector), we use A15 as chip selector. The below schematic implements what is sometimes referred to as
+_address decoding_.
+
+![memory chip select wiring](mem-rw-ce.png)
+
+The schematic also repeats the connections of the other two control signals, nOE and nWE.
+It also gives the hint that an invertor can be implemented with a NAND gate.
+So two inverters and one NAND gate can be implemented with a single
+[quad two-input NAND gate 74HCT00](https://assets.nexperia.com/documents/data-sheet/74HC_HCT00.pdf).
+
+### Memory map
+
+With the above address decode, we get a so-called memory map. A memory map tells for all peripheral chips 
+(ROM, RAM, and later GPIO, timer, UART, ...) which addresses they use. Ours is simple; we only have ROM and RAM.
+
+![memory map](memmap.png)
+
+As a RAM chip I have choosen a HM62256B. This is 256k bit SRAM organized in 32k words of 8 bits. 
+This is chip engineer lingo for a chip of 32k byte RAM. That fits well with it being mapped from 0000 to 7FFF.
+
+As a ROM chip we continue with the AT28C16; a 16k bit EEPROM organized in 2k words of 8 bits.
+A 2k byte ROM. This chip is selected when A15 is 1, so it will be mirrored 16 times (A11, A12, A13 and A14 are dangling).
+The above drawing ignores the mirrors and only shows the top "mirror".
+
 ### Schematic
+
+Find below the latest greatest schematic, to some extend our first complete computer: 
+an oscillator driving the clock of a 6502, an EEPROM with code, a RAM for data,
+and a simple address decode (blue).
+
+![Our first complete computer](eeprom-ram.png0)
 
 ### New firmware
 
