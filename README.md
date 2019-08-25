@@ -58,6 +58,7 @@ As a side project, we study timing.
 We have a computer without peripherals. In this [chapter](5gpio/README.md) we add a VIA, or Versatile Interface Adapter.
 This is a chip that implements two GPIO ports (each with 8 lines), has timers and interrupts.
 
+Finally we can do a proper blinky.
 
 ## 6 UART
 
