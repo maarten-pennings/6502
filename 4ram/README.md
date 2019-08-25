@@ -30,7 +30,7 @@ Those diagrams are packed with information. Take your time to study them. Some o
 - 50ns is a modest interval, compared to the "Cycle Time" tCYC of 1000ns (or 1us, recall, we run at 1MHz), but still 5%.
 - Note also that (rising and falling) edges have horizontal tick lines that mark the moment the signal is considered high or low.
 
-### Clocks
+### 6502 Clocks
 
 The 6502 is fed with a clock, this signal is the "ϕ0 (IN)" at the top of the diagram. 
 In the diagram below I made the ϕ0 curve green.
@@ -51,7 +51,7 @@ In the diagram below I made the ϕ0 curve green.
 - Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
   of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
 
-### Read
+### 6502 Read
 
 In the diagram below I have removed most of the clock clutter and other signals, so that we can focus on the timing behavior 
 of memory access. Let's first have a look at the _read_ process.
@@ -91,7 +91,7 @@ This last conclusion contradicts [Grant's 6502 computer](http://searle.hostei.co
 and that scares me. He's much better than me at this.
 
 
-### Write
+### 6502 Write
 
 The diagram below focusses on the timing behavior of the _write_ process.
 
@@ -108,8 +108,34 @@ The diagram below focusses on the timing behavior of the _write_ process.
 > Gate _write enable_ of the memory chip with R/nW, _and_ with ϕ2.
 
 
-### Wiring
+### Memory read
 
+We should also have a look at the other side, the memory, for example the 
+[AT28C16 datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc0540.pdf).
+This is the timing diagram of read.
+
+![AT28C16 read timing](AT28C16timing-read.png)
+
+- The memory needs tACC of maximum 150ns after the address lines become valid to produce output on the datalines.
+- The memory needs tCE of maximum 150ns after the "chip enable" becomes valid to produce output on the datalines.
+- The memory needs tOE of maximum 700ns after the "output enable" becomes valid to produce output on the datalines.
+- With the proposed wiring, all those signals become available (tADS ns) after the start of ϕ2 low, until ϕ2 goes low again.
+- However, tOH "Output Hold" is specified to be 0ns. And this starts "from nOE, nCE or Address, whichever occurred first".
+  So, if we would gate OE of the memory chip with ϕ2 going low, the memory chip would stop outputting data, 
+  while the 6502 would stil nee dit for tHR
+
+
+### Memory write
+This is the timing diagram of the write process of the memory asd found in the 
+[AT28C16 datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc0540.pdf).
+
+![AT28C16 write timing](AT28C16timing-write.png)
+
+- The core observation is that the memory chip uses the rising edge of nWE to clock in data.
+- The falling edge of ϕ2 is an ideal candidate.
+
+
+### Wiring
 The conclusions for the read and write scenarios leads to following schematic.
 Do note that most memory chips have the control signals low active: _ouput enable_ and _write enable_ and yes, even _chip enable_.
 
