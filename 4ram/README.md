@@ -191,7 +191,31 @@ Find below the latest greatest schematic, to some extend our first complete comp
 an oscillator driving the clock of a 6502, an EEPROM with code, a RAM for data,
 and a simple address decode (blue).
 
-![Our first complete computer](eeprom-ram.png0)
+![Our first complete computer](eeprom-ram.png)
 
 ### New firmware
+
+To test our latest computer, we need firmware. We will recycle our blinky program.
+We cannot reuse because we need to adapt it to the new memory map.
+We make another adaptation: we add an ISR
+
+Our new [sketch](../3eeprom/eeprom-programmer/blinky-top.eeprom) consists of four parts
+ - MAIN at F8000, it initializes our program: enabling IRQ.
+ - SUB1 loops around on F810-F81F, that is addresses 1111 1000 00**01** xxxx
+ - SUB2 loops around on F820-F82F, that is addresses 1111 1000 00**10** xxxx
+ - SUB3 loops around on F830-F83F, that is addresses 1111 1000 00**11** xxxx
+ - As before, SUB1, when finished jumps to SUB2 and SUB2 when finished jumps to SUB1
+ - SUB3 is vectored from IRQ and finishes with an RTI
+ 
+Note the address patterns. I have connected LEDs to A4 andA5. When SUB1 is running LED4 is on and LED5 is off.
+When SUB2 is running LED4 is off and LED5 is on. When the ISR is running both are on. 
+
+The ISQ pushes the return address, and RTI pops it, this proves that RAM is working.
+
+Here is the [video](https://youtu.be/GpOUKbiih6M) to proof it
+ 
+ 
+
+
+
 
