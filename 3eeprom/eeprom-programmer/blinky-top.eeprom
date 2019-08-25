@@ -1,0 +1,77 @@
+@echo disable
+# Two loops at different addresses: put LED on A4 for blinky
+@verify clear
+
+program 000 *
+         # F800 MAIN   
+58       # F800        CLI             
+A9 FF    # F801        LDA #$FF        
+A8       # F803        TAY             
+EA       # F804        NOP             
+EA       # F805        NOP             
+EA       # F806        NOP             
+EA       # F807        NOP             
+EA       # F808        NOP             
+EA       # F809        NOP             
+EA       # F80A        NOP             
+EA       # F80B        NOP             
+EA       # F80C        NOP             
+EA       # F80D        NOP             
+EA       # F80E        NOP             
+EA       # F80F        NOP             
+          
+         # F810 SUB1   
+98       # F810        TYA             
+AA       # F811        TAX             
+         # F812 LOOP1  
+A9 C0    # F812        LDA #$C0        
+         # F814 LOOP1I 
+38       # F814        SEC             
+69 00    # F815        ADC #$00        
+D0 FB    # F817        BNE LOOP1I      
+CA       # F819        DEX             
+D0 F6    # F81A        BNE LOOP1       
+88       # F81C        DEY             
+4C 20 F8 # F81D        JMP SUB2        
+          
+         # F820 SUB2   
+98       # F820        TYA             
+AA       # F821        TAX             
+         # F822 LOOP2  
+A9 C0    # F822        LDA #$C0        
+         # F824 LOOP2I 
+38       # F824        SEC             
+69 00    # F825        ADC #$00        
+D0 FB    # F827        BNE LOOP2I      
+CA       # F829        DEX             
+D0 F6    # F82A        BNE LOOP2       
+88       # F82C        DEY             
+4C 10 F8 # F82D        JMP SUB1        
+          
+         # F830 SUB3   
+98       # F830        TYA             
+AA       # F831        TAX             
+         # F832 LOOP3  
+A9 00    # F832        LDA #$00        
+         # F834 LOOP3I 
+38       # F834        SEC             
+69 00    # F835        ADC #$00        
+D0 FB    # F837        BNE LOOP3I      
+CA       # F839        DEX             
+D0 F6    # F83A        BNE LOOP3       
+EA       # F83C        NOP             
+EA       # F83D        NOP             
+EA       # F83E        NOP             
+40       # F83F        RTI             
+*
+
+echo line
+program 7FC 00 F8 
+program 7FE 30 F8
+
+echo line
+r 000 40
+r 7F0 10
+
+echo line
+verify print
