@@ -51,7 +51,7 @@ The [script](via-blinky-b0.eeprom) to program EEPROM is like the one
 shown above, but then with wait (nested) loops. It was assembled
 [online](https://www.masswerk.at/6502/assembler.html).
 
-
+![Breadboard](eeprom-via.jpg)
 
 
 
