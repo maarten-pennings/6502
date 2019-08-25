@@ -89,10 +89,10 @@ Such a file could be called an EEPROM programming script.
 > You should typically configure the terminal to have a per character or per line delay when sending files.
 > I use a "line delay" of 25ms.
 
-Some example scripts are given. Two, [inx-loop](eeprom-programmer/inx-loop.txt) and 
-[stx-inx-loop](eeprom-programmer/stx-inx-loop.txt), uses series of `write` commands. 
-Two others, [main33inc-isr44inc](eeprom-programmer/main33inc-isr44inc.txt) 
-and [blinky](eeprom-programmer/blinky.txt) are more elaborated.
+Some example scripts are given. Two, [inx-loop](eeprom-programmer/inx-loop.eeprom) and 
+[stx-inx-loop](eeprom-programmer/stx-inx-loop.eeprom), uses series of `write` commands. 
+Two others, [main33inc-isr44inc](eeprom-programmer/main33inc-isr44inc.eeprom) 
+and [blinky](eeprom-programmer/blinky.eeprom) are more elaborated.
 They use streaming mode, `echo` commands to keep track of progress, comments with `#`, 
 and verifies at the end of the script if writing was successful.
 
@@ -124,7 +124,7 @@ and the ISR routine (when an interrupt occurs) increments zero page address 44.
 0302        RTI
 ```
 
-To write this program to the EEPROM we wrote this [script](eeprom-programmer/main33inc-isr44inc.txt).
+To write this program to the EEPROM we wrote this [script](eeprom-programmer/main33inc-isr44inc.eeprom).
 When sending it via a terminal to the Arduino EEPROM programmer, this is the output.
 
 ```
@@ -297,7 +297,7 @@ This is going to be painfull, so let's first switch to a simple program.
 703 4C 02 07 #        JMP LOOP
 ```
 
-One of the [demo scripts](eeprom-programmer/inx-loop.txt) is the script for the Arduino EEPROM programmer.
+One of the [demo scripts](eeprom-programmer/inx-loop.eeprom) is the script for the Arduino EEPROM programmer.
 We flashed the EEPROM, and put it in the board with the Nano, to verify the trace.
 Here we see the loop unroll.
 
@@ -410,7 +410,7 @@ This position we have a changing bit                                  ^
 
 So I hooked a LED to A4.
 
-The complete sketch is available as [script](../eeprom-programmer/blinky.txt) for my Arduino EEPROM programmer.
+The complete sketch is available as [script](../eeprom-programmer/blinky.eeprom) for my Arduino EEPROM programmer.
 Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#6502-with-EEPROM-and-oscillator).
 
 And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
