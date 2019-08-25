@@ -410,7 +410,7 @@ This position we have a changing bit                                  ^
 
 So I hooked a LED to A4.
 
-The complete sketch is available as [script](../eeprom-programmer/blinky.eeprom) for my Arduino EEPROM programmer.
+The complete sketch is available as [script](eeprom-programmer/blinky.eeprom) for my Arduino EEPROM programmer.
 Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#6502-with-EEPROM-and-oscillator).
 
 And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
