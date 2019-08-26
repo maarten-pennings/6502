@@ -17,6 +17,12 @@ I also found a [Youtube video by Ben Eater](https://youtu.be/K88pgWhEb1M)
 that explained how to make a programmer for it using a Nano.
 That seemed like a good way to go.
 
+We will do the following experiments
+ - [3.1. EEPROM programmer](README.md#31-EEPROM-programmer) - Make our own EEPROM programmer with a Nano
+ - [3.2. 6502 with EEPROM and Nano](README.md#32-6502-with-EEPROM-and-Nano) - Use a programmed EEPROM (6502+Nano)
+ - [3.3. 6502 with EEPROM and oscillator](README.md#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
+ - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
+
 
 ## 3.1. EEPROM programmer
 
