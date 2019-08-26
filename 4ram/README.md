@@ -1,4 +1,4 @@
-# RAM
+# 4. RAM
 Trying to build a 6502 based computer. 
 
 One could argue that the [previous](../3eeprom/README.md) chapter resulted in a real computer: 
@@ -9,10 +9,14 @@ In this chapter we will add RAM.
 But it is time to understand ... time.
 Timing of the 6502 and memories.
 
-## Timing
+Tw steps in this chapter
+ - [4.1. Timing](README.md#41-Timing) - Study timing
+ - [4.2. Adding RAM](README.md#42-Adding-RAM) - Adding RAM to our system
+ 
+## 4.1. Timing
 The datasheet of the 6502 has timing diagrams. In this section we'll examine them.
 
-### Timing diagrams
+### 4.1.1. Timing diagrams
 
 The figure below was taken from the [R65C02 datasheet](http://archive.6502.org/datasheets/rockwell_r65c00_microprocessors.pdf) .
 I did remove some non-6502 aspects, and I use 1MHz version as context.
@@ -30,7 +34,7 @@ Those diagrams are packed with information. Take your time to study them. Some o
 - 50ns is a modest interval, compared to the "Cycle Time" tCYC of 1000ns (or 1us, recall, we run at 1MHz), but still 5%.
 - Note also that (rising and falling) edges have horizontal tick lines that mark the moment the signal is considered high or low.
 
-### 6502 Clocks
+### 4.1.2. 6502 Clocks
 
 The 6502 is fed with a clock, this signal is the "ϕ0 (IN)" at the top of the diagram. 
 In the diagram below I made the ϕ0 curve green.
@@ -51,7 +55,7 @@ In the diagram below I made the ϕ0 curve green.
 - Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
   of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
 
-### 6502 Read
+### 4.1.3. 6502 Read
 
 In the diagram below I have removed most of the clock clutter and other signals, so that we can focus on the timing behavior 
 of memory access. Let's first have a look at the _read_ process.
@@ -91,7 +95,7 @@ This last conclusion contradicts [Grant's 6502 computer](http://searle.hostei.co
 and that scares me. He's much better than me at this.
 
 
-### 6502 Write
+### 4.1.4. 6502 Write
 
 The diagram below focusses on the timing behavior of the _write_ process.
 
@@ -108,7 +112,7 @@ The diagram below focusses on the timing behavior of the _write_ process.
 > Gate _write enable_ of the memory chip with R/nW, _and_ with ϕ2.
 
 
-### Memory read
+### 4.1.5. Memory read
 
 We should also have a look at the other side, the memory, for example the 
 [AT28C16 datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc0540.pdf).
@@ -125,7 +129,7 @@ This is the timing diagram of read.
   while the 6502 would stil nee dit for tHR
 
 
-### Memory write
+### 4.1.6. Memory write
 This is the timing diagram of the write process of the memory asd found in the 
 [AT28C16 datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc0540.pdf).
 
@@ -135,19 +139,19 @@ This is the timing diagram of the write process of the memory asd found in the
 - The falling edge of ϕ2 is an ideal candidate.
 
 
-### Wiring
+### 4.1.7. Wiring
 The conclusions for the read and write scenarios leads to following schematic.
 Do note that most memory chips have the control signals low active: _ouput enable_ and _write enable_ and yes, even _chip enable_.
 
 ![memory read/write wiring](mem-rw-enable.png)
 
 
-## Adding RAM
+## 4.2. Adding RAM
 
 We are going to complete our computer: add a second memory next to the ROM, a RAM.
 So that finally we can use the zero page (00xx), have stack (01xx), or, well, store program data.
 
-### Address decoding
+### 4.2.1. Address decoding
 
 In the previous chapter we had a single 2kB EEPROM. It has a data range of 000-800 (hex).
 We only connected 11 address lines of the 6502: A0-A10. The other 5 (A11-A15) were left dangling. 
@@ -171,7 +175,7 @@ It also gives the hint that an invertor can be implemented with a NAND gate.
 So two inverters and one NAND gate can be implemented with a single
 [quad two-input NAND gate 74HCT00](https://assets.nexperia.com/documents/data-sheet/74HC_HCT00.pdf).
 
-### Memory map
+### 4.2.2. Memory map
 
 With the above address decode, we get a so-called memory map. A memory map tells for all peripheral chips 
 (ROM, RAM, and later GPIO, timer, UART, ...) which addresses they use. Ours is simple; we only have ROM and RAM.
@@ -185,7 +189,7 @@ As a ROM chip we continue with the AT28C16; a 16k bit EEPROM organized in 2k wor
 A 2k byte ROM. This chip is selected when A15 is 1, so it will be mirrored 16 times (A11, A12, A13 and A14 are dangling).
 The above drawing ignores the mirrors and only shows the top "mirror".
 
-### Schematic
+### 4.2.3. Schematic
 
 Find below the latest greatest schematic, to some extend our first complete computer: 
 an oscillator driving the clock of a 6502, an EEPROM with code, a RAM for data,
@@ -197,7 +201,7 @@ which looks like this on my breadboard
 
 ![EEPROM and RAM on breadboard](eeprom-ram.jpg)
 
-### New firmware
+### 4.2.4. New firmware
 
 To test our latest computer, we need firmware. We will recycle our blinky program.
 We cannot reuse because we need to adapt it to the new memory map.
