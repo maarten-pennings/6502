@@ -1,4 +1,4 @@
-# GPIO
+# 5. GPIO
 Trying to build a 6502 based computer. 
 
 We are going to add a peripheral to our computer.
@@ -8,7 +8,7 @@ his is a chip that implements two 8-bit GPIO ports, has timers and interrupts.
 
 Since we do not know the VIA, we start small
 
-## No RAM
+## 5.1. No RAM
 How does the VIA work? The VIA has 16 registers, here we list the first four.
 
  | address (RS3-RS0) | register |      description                             |
