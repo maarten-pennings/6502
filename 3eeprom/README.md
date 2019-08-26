@@ -68,6 +68,9 @@ This is the schematic of my _Arduino EEPROM programmer_:
 
 ![Arduino EEPROM programmer schematic](eeprom-programmer.png)
 
+I used 10k for the pull-ups and pull-downs. I used the quite large value of 1k for the current limiting resistors of the LEDs.
+V_R = 5-2 = 3V, so that I_R = 3/1000 = 3mA. If all 11+8 LEDs are on, they consue only 60mA. Recall, the board is running from USB.
+
 And this a picture of my breadboard:
 
 ![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
@@ -342,7 +345,7 @@ The trace on the logic analyser matches the trace by the Nano.
 ## 3.4. Blinky
 
 The previous section was a major milestone: a 6502 clocked by an oscillator and running a program from EEPROM.
-Nearly a complete computer, exceot for the RAM. But we also miss perhiperals like GPIO or UART. Maybe at some
+Nearly a complete computer, except for the RAM. But we also miss peripherals like GPIO or UART. Maybe at some
 stage my project will have those, but not now. So how can we make the "Hello, world!" of embedded software, a _blinky_?
 
 The trick that I cooked up was having two wait loops. One wait loop running in address range A, the other wait loop
