@@ -39,7 +39,7 @@ as RXD and TXD and we need those two pins to send the trace to the PC (over USB)
 From the [pinout](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png)
 we see that analog pins A0..A5 also have a double role, they can act as digital pins. That's 6 more digital pins. 
 
-In other words, we have 18 digital pins. We need 1 for clock and 16 far the address lines. Even one spare.
+In other words, we have 18 digital pins. We need 1 for clock and 16 for the address lines. Even one spare.
 
 ![Schematic of Nano spying on the address lines](nano-address.png)
 
@@ -144,7 +144,7 @@ Some notes
    have the same 7-clock interrupt sequence. 
  - One exception: for RESET the three pushes are fake: the 6502 issues a _read_ to the memory instead of a _write_.
  - The stack pointer (S) has a random value after reset, in the above run it happened to be EE.
-   The stack page is hardwired to 01 on the 6502.
+   The stack page is hardwired to 01 on the 6502 (0100-01FF).
  - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
  - I can not explain why the first NOP only takes one clock.
  - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
@@ -372,7 +372,7 @@ The IRQ line on the board is pulled up, so if we add a wire and touch the GND si
 > which thus now starts to execute.
 >
 > The ISR should do the proper action for the interrupt, but also some administrative work:
-> it should signal the device that pull the IRQ line low, that it is serviced, so 
+> it should signal the device that pulled the IRQ line low, that it is serviced, so 
 > that it will let the IRQ line go high again. The ISR ends with a Return from Interrupt (RTI) 
 > instruction. This restores the I flag (back to 0) and a new interrupts can be handled. 
 > If the (I) flag is cleared inside the ISR routine, nested interrupts can occur. 
@@ -568,7 +568,7 @@ Welcome to Rom6502
 - In the loop, it increments X `INX` or `E8`
 - Then executes the store of X to 155 `STX $0155` which takes four ticks `8E 8E 55 01`
 - The 6502 attempts to write (R/nW is 0) but our "ROM" (the Nano) does ignore this. 
-  The Nano actually writes `EA` causing the dreaded short circuit (but save due to the resistors).
+  The Nano actually writes `EA` causing the dreaded short circuit (but we are rescued by the resistors).
 - Finally there is the jump to loop `JMP 0202`.
 
 
@@ -697,7 +697,7 @@ The `main` gets executed from the reset vector.
 Function `main` has a `loop` that increments zero page location 33.
 
 Before the loop, `main` initializes zero page location 33 to 00.
-It has two other initliazations: zeroing page location 44 to 00, and enabling of interupts (`CLI`).
+It has two other initilazations: zeroing page location 44 to 00, and enabling of interupts (`CLI`).
 The enabling of interrupts allows the second function `isr` to be called when grounding the nIRQ line.
 The `isr` increments zero page location 44.
 
@@ -807,4 +807,4 @@ The Nano implements the rest of the system: memory and clock.
 And it povides a trace facility.
 
 This is a great way to investigate the behavior of the 6502.
-And it offers an easy start: next to the 6502 only a nano is needed.
+And it offers an easy start: next to the 6502 only a Nano is needed.
