@@ -1,4 +1,4 @@
-# Emulation
+# 2. Emulation
 Trying to build a 6502 based computer.
 
 We have (see [previous chapter](..\1clock)) a 6502 in free run: it executes NOP, NOP, NOP, ... and by inspecting
@@ -11,23 +11,23 @@ Then I had a nice idea: the Nano controls the clock, so it knows when the addres
 Can't we snoop (read) the data bus as well? Can't we _write_ the data bus? Yes, yes, and yes.
 
 We will do the following experiments
- - [1 Clock](README.md#1-Clock) - Use Nano as clock
- - [2 Address bus](README.md#2-Address-bus) - Use Nano to trace the address bus
- - [3 Jump loop](README.md#3-Jump-loop) - Test case: trace a JMP loop
- - [4 Data bus](README.md#4-Data-bus) - Use Nano to trace the data bus as well
- - [5 Interrupt (IRQ)](README.md#5-Interrupt-(IRQ)) - Test case: trace a single IRQ
- - [6 Emulate ROM](README.md#6-Emulate-ROM) - Use Nano to respond to data read requests
- - [7 Emulate RAM](README.md#7-Emulate-RAM) - Use Nano to also respond to data write requests
- - [8 Test IRQ](README.md#8-Test-IRQ) - Test case: trace IRQs
+ - [2.1. Clock](README.md#21-Clock) - Use Nano as clock
+ - [2.2. Address bus](README.md#22-Address-bus) - Use Nano to trace the address bus
+ - [2.3. Jump loop](README.md#23-Jump-loop) - Test case: trace a JMP loop
+ - [2.4. Data bus](README.md#24-Data-bus) - Use Nano to trace the data bus as well
+ - [2.5. Interrupt (IRQ)](README.md#25-Interrupt-(IRQ)) - Test case: trace a single IRQ
+ - [2.6. Emulate ROM](README.md#26-Emulate-ROM) - Use Nano to respond to data read requests
+ - [2.7. Emulate RAM](README.md#27-Emulate-RAM) - Use Nano to also respond to data write requests
+ - [2.8. Test IRQ](README.md#28-Test-IRQ) - Test case: trace IRQs
 
-## 1 Clock
+## 2.1. Clock
 
-The [first step](../1clock/README.md#clock---nano---wiring) was taken in the 
+The [first step](../1clock/README.md#13-clock---nano) was taken in the 
 previous chapter. We used a Nano as a clock source for the 6502. The address lines are dangling, the data lines are hardwired to EA 
 (the opcode of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 
 "free" running at 160kHz.
 
-## 2 Address bus
+## 2.2. Address bus
 
 With the first experiment, we believe the 6502 is executing NOPs. Can we check that? Can we check that it starts at EAEA 
 (the reset vector at FFFC and FFFD also reads EA and EA) and then progressing to EAEB, EAEC? Can we spy the address bus?
@@ -150,7 +150,7 @@ Some notes
  - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
 
 
-## 3 Jump loop
+## 2.3. Jump loop
 
 The previous experiment is a success: we see the address lines increment nicely (in steps of two)
 and also the reset behavior is as documented. Still, it would be nice to have a more realistic program;
@@ -240,7 +240,7 @@ Some notes
  - One clock is still about 1500us (0.7kHz)
 
 
-## 4 Data bus
+## 2.4. Data bus
 
 In the notes on the previous experiment, we have "load of 0000 (this confirms that FFFC and FFFD read 00 00)".
 Wouldn't it be nice if we could not only see the _address_ bus, but also the _data_ bus?
@@ -347,7 +347,7 @@ Welcome to AddrDataSpy6502
  - One clock is now just below 2000us (0.5kHz).
 
 
-## 5 Interrupt (IRQ)
+## 2.5. Interrupt (IRQ)
 
 We should be able to generate an interrupt.
 The IRQ line on the board is pulled up, so if we add a wire and touch the GND signal, we should get an interrupt.
@@ -425,7 +425,7 @@ the nIRQ line of the 6502 with GND for a brief moment.
 Success, interrupt fully matches our model.
 
 
-## 6 Emulate ROM
+## 2.6. Emulate ROM
 
 The Nano now controls the clock of the 6502, but it also reads the (well, most) address lines.
 And it is connected to the data lines. What prevents us from writing a sketch that has a 1k array (remember we
@@ -572,7 +572,7 @@ Welcome to Rom6502
 - Finally there is the jump to loop `JMP 0202`.
 
 
-## 7 Emulate RAM
+## 2.7. Emulate RAM
 
 In the previous section we implemented a ROM: the 6502 could _read_ bytes.
 Those bytes come from a memory array inside the Nano.
@@ -664,7 +664,7 @@ Memory loaded
 
 The clock steps are still 2000us or 0.5kHz.
 
-## 8 Test IRQ
+## 2.8. Test IRQ
 
 Now that we have RAM operational, we can really test interrupts.
 We did that before (by grounding nIRQ), but we could do that only one time (after reset).
@@ -800,7 +800,7 @@ Memory loaded
   1809104us 20b 1 02
 ```
 
-## Conclusion
+## 2.9. Conclusion
 
 We have a 6502 with some passives (pull-ups, caps) and a Nano.
 The Nano implements the rest of the system: memory and clock.
