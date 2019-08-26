@@ -9,7 +9,7 @@ In this chapter we will add RAM.
 But it is time to understand ... time.
 Timing of the 6502 and memories.
 
-Tw steps in this chapter
+Two steps in this chapter
  - [4.1. Timing](README.md#41-Timing) - Study timing
  - [4.2. Adding RAM](README.md#42-Adding-RAM) - Adding RAM to our system
  
