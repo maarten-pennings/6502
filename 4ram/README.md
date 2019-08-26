@@ -163,7 +163,7 @@ But now we have two memories. If we connect both, in parallel, both would mirror
 We need to enable one for some addresses, and enable the other for other adresses. Memory chips have a _chip enable_
 pin just for this purpose.
 
-Later we migh add other chips (memory mapped IO) and allocating address space all the chips get more elaborated.
+Later we might add other chips (memory mapped IO) and allocating address space all the chips get more elaborated.
 But for now, we can keep it simple. Since RAM needs to be at 0000 (for zero page, stack), and ROM needs to be at FFFC 
 (for reset vector), we use A15 as chip selector. The below schematic implements what is sometimes referred to as
 _address decoding_.
@@ -208,7 +208,7 @@ We cannot reuse because we need to adapt it to the new memory map.
 We make another adaptation: we add an ISR
 
 Our new [sketch](blinky-top.eeprom) consists of four parts
- - MAIN at F8000, it initializes our program: enabling IRQ.
+ - MAIN at F800, it initializes our program: enabling IRQ.
  - SUB1 loops around on F810-F81F, that is addresses 1111 1000 00**01** xxxx
  - SUB2 loops around on F820-F82F, that is addresses 1111 1000 00**10** xxxx
  - SUB3 loops around on F830-F83F, that is addresses 1111 1000 00**11** xxxx
