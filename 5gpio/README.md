@@ -54,5 +54,22 @@ shown above, but then with wait (nested) loops. It was assembled
 ![Breadboard](eeprom-via.jpg)
 
 
+## 5.2. Address decode
+
+The following address decoder is prepared for the "future".
+It has a place for an 32k RAM, an 8k ROM and 6 peripherals, like VIAs.
+
+The [74138](https://www.onsemi.com/pub/Collateral/MC74AC138-D.PDF) decodes 3 ("binary") address lines into 1-of-8.
+To my surprise, the outputs of the 74138 are low active, which happens to map perfectly to the nCE of most peripherals.
+
+![New address decoder](address-decode.png)
+
+We use A15 to select (when 0) the RAM, or (when 1) the decoder.
+The decoder splits A12-A14 to 8 lines, each representing a 4k block in the memory map.
+So each line corresponds with the highest nible of the address.
+
+I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to AND the upper two lines of the demux.
+I used one NAND and one NAND as inverter.
+
 
 
