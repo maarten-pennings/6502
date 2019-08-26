@@ -1,4 +1,4 @@
-# EEPROM
+# 3. EEPROM
 Trying to build a 6502 based computer.
 
 We need a memory to store a program that executes on reset.
@@ -18,9 +18,9 @@ that explained how to make a programmer for it using a Nano.
 That seemed like a good way to go.
 
 
-## EEPROM programmer
+## 3.1. EEPROM programmer
 
-### Design of the EEPROM programmer
+### 3.1.1. Design of the EEPROM programmer
 
 Programming the [AT28C16](https://opencircuit.shop/ProductInfo/1001018/CAT28C16A-Datasheet.pdf) is fairly simple.
 In steady state, the chip is powered (VCC, VSS) and enabled (nCE).
@@ -56,7 +56,7 @@ Then I decided to add two buttons to allow the user (with the help of the Nano) 
 The buttons form an alternative user interface, but only allows reading.
 
 
-### Hardware of the EEPROM programmer
+### 3.1.2. Hardware of the EEPROM programmer
 
 This is the schematic of my _Arduino EEPROM programmer_:
 
@@ -67,7 +67,7 @@ And this a picture of my breadboard:
 ![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
 
 
-### Firmware of the EEPROM programmer
+### 3.1.3. Firmware of the EEPROM programmer
 
 The Nano in the Arduino EEPROM programmer needs a sketch.
 I ended up with nearly a "product quality" [sketch](eeprom-programmer).
@@ -96,11 +96,11 @@ and [blinky](eeprom-programmer/blinky.eeprom) are more elaborated.
 They use streaming mode, `echo` commands to keep track of progress, comments with `#`, 
 and verifies at the end of the script if writing was successful.
 
-The third program is the same program that we used in the [previous chapter](../2emulation/README.md#8-Test-IRQ).
+The third program is the same program that we used in the [previous chapter](../2emulation/README.md#28-Test-IRQ).
 We will now use it again. The fourth (blinky) will be used at the end of the chapter.
 
 
-## 6502 with EEPROM and Nano 
+## 3.2. 6502 with EEPROM and Nano 
 
 In this section, we are going to load an EEPROM with a program, hook the EEPROM to the 6502 and let it run.
 To confirm correctness, we trace it with a Nano. The Nano thus also acts as clock.
@@ -283,7 +283,7 @@ Welcome to AddrDataSpy6502
 
 Note that we also tried IRQ, but since there is no RAM yet, this crashes (when popping the return address using `RTI`).
 
-## 6502 with EEPROM and oscillator
+## 3.3. 6502 with EEPROM and oscillator
 
 Would the EEPROM also work on full speed; 1MHz from a oscillator.
 The problem is how to verify that.
@@ -333,7 +333,7 @@ The trace on the logic analyser matches the trace by the Nano.
 ![6502 with EEPROM trace](eeprom-osc-trace.png)
 
 
-## Blinky
+## 3.4. Blinky
 
 The previous section was a major milestone: a 6502 clocked by an oscillator and running a program from EEPROM.
 Nearly a complete computer, exceot for the RAM. But we also miss perhiperals like GPIO or UART. Maybe at some
@@ -411,7 +411,7 @@ This position we have a changing bit                                  ^
 So I hooked a LED to A4.
 
 The complete sketch is available as [script](eeprom-programmer/blinky.eeprom) for my Arduino EEPROM programmer.
-Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#6502-with-EEPROM-and-oscillator).
+Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#33-6502-with-EEPROM-and-oscillator).
 
 And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
 
