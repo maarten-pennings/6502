@@ -69,7 +69,7 @@ This is the schematic of my _Arduino EEPROM programmer_:
 ![Arduino EEPROM programmer schematic](eeprom-programmer.png)
 
 I used 10k for the pull-ups and pull-downs. I used the quite large value of 1k for the current limiting resistors of the LEDs.
-V_R = 5-2 = 3V, so that I_R = 3/1000 = 3mA. If all 11+8 LEDs are on, they consue only 60mA. Recall, the board is running from USB.
+V_R = 5-2 = 3V, so that I_R = 3/1000 = 3mA. If all 11+8 LEDs are on, they consume only 60mA. Recall, the board is running from USB.
 
 And this a picture of my breadboard:
 
