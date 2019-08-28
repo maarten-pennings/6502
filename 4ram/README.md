@@ -232,6 +232,9 @@ We may think we have a full fledged computer -- cpu, clock, rom, ram -- but the 
 any peripherals. Think GPIO ports, a UART, and maybe even things like a small keyboard or display. For that we need
 to add memory mapped IO, and for that we need an address decoder. 
 
+
+### 4.3.1 Address decode concept
+
 An address decoder looks at the address lines and decides which chip to enable: ROM, RAM, GPIO, UART etc.
 In the previous section we already had an address decoder, but since it only had to choose between two chips, 
 it was simple: A15 low selects RAM, A15 high selects ROM.
@@ -253,5 +256,17 @@ So each decoder output line corresponds with the highest nible of the address.
 I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to AND the upper two lines of the demux.
 I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#4-2-1-Simple-address-decoding) 
 that create the OE and WE for the memory chips.
+
+
+### 4.3.1 Address decode schematic
+
+The schematic of our 6502/ROM/RAM with future proof decoder is as follows.
+
+![Schematics](eeprom-ram-decode.png)
+
+Find below a photo of my breadboard, with labels added.
+
+![Breadboard](eeprom-ram-decode.jpg)
+
 
 
