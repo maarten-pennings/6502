@@ -233,7 +233,7 @@ any peripherals. Think GPIO ports, a UART, and maybe even things like a small ke
 to add memory mapped IO, and for that we need an address decoder. 
 
 
-### 4.3.1 Address decode concept
+### 4.3.1. Address decode concept
 
 An address decoder looks at the address lines and decides which chip to enable: ROM, RAM, GPIO, UART etc.
 In the previous section we already had an address decoder, but since it only had to choose between two chips, 
@@ -258,7 +258,7 @@ I used one NAND and one NAND as inverter. Those two were "left over" from the [t
 that create the OE and WE for the memory chips.
 
 
-### 4.3.1 Address decode schematic
+### 4.3.2. Address decode schematic
 
 The schematic of our 6502/ROM/RAM with future proof decoder is as follows.
 
@@ -268,5 +268,12 @@ Find below a photo of my breadboard, with labels added.
 
 ![Breadboard](eeprom-ram-decode.jpg)
 
+### 4.3.3. Conclusion
 
+We are running the same [sketch](blinky-top.eeprom) as in the previous chapter.
+And we get the same [result](https://youtu.be/LvaN9udekvI).
+
+We have now room to add one or two VIAs for LEDs, 7-segment display, switches, or maybe even a scanning keyboard.
+Or we could add a serial port.
+That is for the next chapters.
 
