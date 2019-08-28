@@ -154,7 +154,7 @@ Do note that most memory chips have the control signals low active: _ouput enabl
 We are going to complete our computer: add a second memory next to the ROM, a RAM.
 So that finally we can use the zero page (00xx), have stack (01xx), or, well, store program data.
 
-### 4.2.1. Address decoding
+### 4.2.1. Simple address decoding
 
 In the previous chapter we had a single 2kB EEPROM. It has a data range of 000-800 (hex).
 We only connected 11 address lines of the 6502: A0-A10. The other 5 (A11-A15) were left dangling. 
@@ -168,8 +168,8 @@ pin just for this purpose.
 
 Later we might add other chips (memory mapped IO) and allocating address space all the chips get more elaborated.
 But for now, we can keep it simple. Since RAM needs to be at 0000 (for zero page, stack), and ROM needs to be at FFFC 
-(for reset vector), we use A15 as chip selector. The below schematic implements what is sometimes referred to as
-_address decoding_.
+(for reset vector), we use A15 as chip selector. The blue bubble in the below schematic implements what is referred to as an
+_address decoder_.
 
 ![memory chip select wiring](mem-rw-ce.png)
 
@@ -251,7 +251,7 @@ The decoder splits the next 3 address lines (A14-A12) to 8 lines, each represent
 So each decoder output line corresponds with the highest nible of the address.
 
 I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to AND the upper two lines of the demux.
-I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#417-Wiring) 
+I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#4-2-1-Simple-address-decoding) 
 that create the OE and WE for the memory chips.
 
 
