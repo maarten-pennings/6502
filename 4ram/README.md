@@ -9,9 +9,12 @@ In this chapter we will add RAM.
 But it is time to understand ... time.
 Timing of the 6502 and memories.
 
-Two steps in this chapter
+Adding a second peripheral (RAM next to the ROM) requires an address decoder to select which of the (two) chips should be selected.
+
+The steps in this chapter
  - [4.1. Timing](README.md#41-Timing) - Study timing
- - [4.2. Adding RAM](README.md#42-Adding-RAM) - Adding RAM to our system
+ - [4.2. Adding RAM](README.md#42-Adding-RAM) - Adding RAM to our system with a simple address decoder
+ - [4.3. Address decoder](README.md#43-Address-decoder) - Adding a future proof address decoder
  
 ## 4.1. Timing
 The datasheet of the 6502 has timing diagrams. In this section we'll examine them.
@@ -222,4 +225,33 @@ The ISQ pushes the return address, and RTI pops it, this proves that RAM is work
 
 Here is the [video](https://youtu.be/GpOUKbiih6M) to proof it
  
- 
+
+## 4.3. Address decoder
+
+We may think we have a full fledged computer -- cpu, clock, rom, ram -- but the truth is that we do not yet have 
+any peripherals. Think GPIO ports, a UART, and maybe even things like a small keyboard or display. For that we need
+to add memory mapped IO, and for that we need an address decoder. 
+
+An address decoder looks at the address lines and decides which chip to enable: ROM, RAM, GPIO, UART etc.
+In the previous section we already had an address decoder, but since it only had to choose between two chips, 
+it was simple: A15 low selects RAM, A15 high selects ROM.
+
+The following address decoder is prepared for the "future".
+It has a place for an 32k RAM, an 8k ROM and 6 peripherals, like 
+GPIOs (implemented by e.g. a VIA chip - Versatile Interface Adapter) or 
+UARTS (implemented by e.g. a ACIA Asynchronous Communication Interface).
+
+The [74138](https://www.onsemi.com/pub/Collateral/MC74AC138-D.PDF) decodes 3 ("binary") address lines into 1-of-8.
+To my surprise, the outputs of the 74138 are low active, which happens to map perfectly to the nCE of most peripherals.
+
+![New address decoder](address-decode.png)
+
+We use A15 to select (when 0) the RAM, or (when 1) the _decoder_.
+The decoder splits the next 3 address lines (A14-A12) to 8 lines, each representing a 4k block in the memory map.
+So each decoder output line corresponds with the highest nible of the address.
+
+I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to AND the upper two lines of the demux.
+I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#417-Wiring) 
+that create the OE and WE for the memory chips.
+
+
