@@ -157,3 +157,47 @@ Or we could add a serial port. That is for the next chapters.
 
 ## 5.3. Testing
 
+I wanted to test the address decode, especially the unused lines.
+
+The idea i had was too hookup SR-latches. The Set and Reset inputs happen to be low-active. So by hooking S to nO0, and R to nO1
+of the 3-to-8 decoder, I have made my own GPIO. For example, connect a LED to output Q of the SR latch. 
+By accessing address 8xxx, the Set would fire (LED on), and by accessing addres 9xxx, the Reset would fire (LED off).
+
+I hooked a second SR-latch and LED to Axxx and Bxxx, and a third to Cxxx and Dxxx. See below for the schematic.
+
+![Decoder test schematic](decoder-test.png).
+
+
+This is the [6502 program](decoder-test.eeprom) I wrote (and flashed with the Arduino EEPROM programmer).
+
+```
+F800 MAIN
+F800        LDA $8000 # 'SET' LED0
+F803        JSR WAIT
+F806        LDA $9000 # 'RESET' LED0
+F809        JSR WAIT
+F80C        LDA $A000 # 'SET' LED1
+F80F        JSR WAIT
+F812        LDA $B000 # 'RESET' LED1
+F815        JSR WAIT
+F818        LDA $C000 # 'SET' LED2
+F81B        JSR WAIT
+F81E        LDA $D000 # 'RESET' LED2
+F821        JSR WAIT
+F824        JMP MAIN
+
+F827 WAIT
+F827        LDX #$00
+F829 WAIT1
+F829        LDY #$00
+F82B WAIT2
+F82B        DEY
+F82C        BNE WAIT2
+F82E        DEX
+F82F        BNE WAIT1
+F831        RTS
+```
+
+Since the code is in ROM, the stack is in RAM (for the `JSR WAIT`), and the SR-latches are connected to the other pins 
+of the address decoder, this [movie](https://youtu.be/w8RHORfYriM) qualifies as a passed test.
+
