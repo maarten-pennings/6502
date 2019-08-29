@@ -60,7 +60,7 @@ any peripherals. Think GPIO ports, a UART, and maybe even things like a small ke
 to add _memory mapped IO_, and for that we need an address decoder.  
 
 When adding the RAM next to the ROM we already had a minimalistic address decoder.
-In chapter [5](5decoder/README.md) we add a "future proof" one.
+In chapter [five](5decoder/README.md) we add a "future proof" one.
 
 
 ## 6 GPIO (VIA)
