@@ -107,7 +107,7 @@ Does the below picture look familiar?
 
 ![74138](74138.png)
 
-It should. It is drawn in a different style, but it is actually the inverter, AND gate and chip select we
+It should. It is drawn in a different style, but it is actually the inverters, AND gates and chip select we
 have seen in the above theory on address decoding.
 
 I did not draw that picture. It is the logic diagram representing the 74ACT138 as
@@ -116,7 +116,7 @@ given in its [datasheet](https://www.onsemi.com/pub/Collateral/MC74AC138-D.PDF).
 This is a so-called 1-of-8 decoder (or 3-to-8 decoder). One chip does all.
 
 What is even more surprising is that the _outputs_ of the 74138 are low-active, and that happens
-to match my chips: they all have a low active chip select. No extra chips needed.
+to match my chips: they all have a low-active chip select. No extra chips needed.
 
 ### 5.2.2. Description
 
