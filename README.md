@@ -54,14 +54,26 @@ In chapter [four](4ram/README.md) we add a RAM.
 As a side project, we study timing.
 
 
-## 5 GPIO (VIA)
+## 5 Memory decoder
+We may think we have a full fledged computer -- cpu, clock, rom, ram -- but the truth is that we do not yet have 
+any peripherals. Think GPIO ports, a UART, and maybe even things like a small keyboard or display. For that we need
+to add _memory mapped IO_, and for that we need an address decoder.  
+
+When adding the RAM next to the ROM we already had a minimalistic address decoder.
+In chapter [5](5decoder/README.md) we add a "future proof" one.
+
+
+## 6 GPIO (VIA)
 We have a computer without peripherals. In this [chapter](5gpio/README.md) we add a VIA, or Versatile Interface Adapter.
 This is a chip that implements two GPIO ports (each with 8 lines), has timers and interrupts.
 
 Finally we can do a proper blinky.
 
-## 6 UART
+## 7 UART
 
+Adding the ACIA...
 
-## 7 Monitor
+## 8 Monitor
+
+Adding a monitor program to write/read and go...
 
