@@ -1,0 +1,41 @@
+@echo disable
+# Decoder test, S/R latches on 8000/9000, A000/B000, C000/D000
+@verify clear
+
+program 000 *
+         # F800 MAIN
+AD 00 80 # F800        LDA $8000 # 'SET' LED0
+20 27 F8 # F803        JSR WAIT
+AD 00 90 # F806        LDA $9000 # 'RESET' LED0
+20 27 F8 # F809        JSR WAIT
+AD 00 A0 # F80C        LDA $A000 # 'SET' LED1
+20 27 F8 # F80F        JSR WAIT
+AD 00 B0 # F812        LDA $B000 # 'RESET' LED1
+20 27 F8 # F815        JSR WAIT
+AD 00 C0 # F818        LDA $C000 # 'SET' LED2
+20 27 F8 # F81B        JSR WAIT
+AD 00 D0 # F81E        LDA $D000 # 'RESET' LED2
+20 27 F8 # F821        JSR WAIT
+4C 00 F8 # F824        JMP MAIN
+         #
+         # F827 WAIT
+A2 00    # F827        LDX #$00
+         # F829 WAIT1
+A0 00    # F829        LDY #$00
+         # F82B WAIT2
+88       # F82B        DEY
+D0 FD    # F82C        BNE WAIT2
+CA       # F82E        DEX
+D0 F8    # F82F        BNE WAIT1
+60       # F831        RTS
+
+
+echo line
+program 7FC 00 F8
+
+echo line
+r 000 40
+r 7F0 10
+
+echo line
+verify print
