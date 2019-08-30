@@ -30,25 +30,26 @@ The important part to note here has a blue box labeled "address decoding". We se
 one being high when the address lines is 0 and one being high when the address line is 1. Each location has an AND port 
 that selects the a unique address pattern from 000 to 111. The locations are labeled with these patterns.
 
-Note the design of address lines, inverters and multi input AND gates. That implements address decoding.
+Note the design pattern: address lines, inverters and multi input AND gates to activate locations. That implements address decoding.
 
 Also note that the complete address decoding is internal in the chip. No external address decoding is needed when 
 you have a single peripheral to the CPU. This is why in our [EEPROM only](../3eeprom/README.md#33-6502-with-eeprom-and-oscillator)
-computer there was no address decoder.
+computer there was no (visible, external) address decoder.
 
 ## 5.1.2. A second device
 
-Let us assume that we want to have a bigger memory in our computer. If you were a chip designed you might consider 
+Let us assume that we want to have a bigger memory in our computer. If you were a chip designer you might consider 
 designing a bigger chip. Let's give it an extra address line and double the number of memory locations.
 
 ![Doubled the memory chip](decoder16x4.png)
 
 When we look at the above memory chip, we see that it is a simple extension of the previous one.
 The chip designer just added an A3 line, added the low and high select lines, and added a fourth input on each AND.
-This extends the 8×4bit memory into an 16×4bit memory (16 locations of each 4 bit). Address decoding is completely 
+This extends the 8×4bit memory into an 16×4bit memory (16 locations of each 4 bit). Address decoding is (still) completely 
 inside the 16×4bit memory chip.
 
-But, if we are not a designer, we could also just buy _two_ 8×4bit memory chips. That gives us the same amount of memory.
+But, if we are not a chip designer but a chip user, we could also just buy two 8×4bit memory chips. 
+That gives us the same amount of memory.
 The trick is that every chip has one extra control line that was not yet drawn in the 8×4bit memory of the previous section: 
 the chip select or CS line. Please be aware that in this theoretical story I use "positive" logic, many chips have 
 low-active CS lines.
@@ -59,27 +60,28 @@ We see that the CS line is an input for every AND gate. Basically, when CS is lo
 And that is precisely the point. When A3=0, the left chip is active, when A3=1, the right chip is active.
 
 Note that a large part of the address decode is inside the two chips, but a small part is outside: the green part,
-and more specifically a single NOT gate.
+in this case a single NOT gate.
 
-This is precisely the situation in [EEPROM only](../4ram/README.md#421-simple-address-decoding): we had two chips,
+This is precisely the situation in [EEPROM/RAM](../4ram/README.md#421-simple-address-decoding): we had two chips,
 and EEPROM and a RAM, and we used A15 with an inverter to select between the two.
 
 ## 5.1.3. Four peripherals
 
 You might wonder if the "chip select line" approach scales. What happens if we have multiple memories or peripherals?
-Yes, the the CS architecture works, but the external address decoding logic increases.
+Yes, the CS architecture works, but the external address decoding logic increases. For example take the case of 4 
+memory chips (A,B, C, and D).
 
 ![Four peripheral chips](decoder4x8x4.png)
 
-Above we see the AND-gate pattern that was _inside_ the chip, now also emerge _outside_ the chip.
+We see the AND-gate pattern that was _inside_ the chip, now also emerge _outside_ the chip.
 
-This is the situation in the [next section](README.md#52-Implementation).
+This is the architecture that we aim for in [this chapter](README.md#52-Implementation).
 
 ## 5.1.4. Memory map
 
 The address decoding logic relates one-to-one to a _memory map_.
 
-The four chip memory decoder from the previous sections leads to this memory map.
+The memory decoder with the four memories (A, B, C and D) leads to this memory map.
 
 ![memory map of the four peripheral chips](map4x8x4.png)
 
@@ -98,7 +100,7 @@ Device D runs from 0b11000-0b11111, or 0x18-0x1F.
 After all the theory, let's build an address decode for our 6502 computer.
 
 In the previous chapter we already had an address decoder, but since it only had to choose between two chips, 
-it was simple: A15 low selects RAM, A15 high selects ROM. Let's build one that not only decode for a
+it was simple: A15 low selects RAM, A15 high selects ROM. Let's build one that not only decodes for a
 ROM and a RAM, but also for a couple of peripherals.
 
 ### 5.2.1. Introduction
@@ -110,18 +112,18 @@ Does the below picture look familiar?
 It should. It is drawn in a different style, but it is actually the inverters, AND gates and chip select we
 have seen in the above theory on address decoding.
 
-I did not draw that picture. It is the logic diagram representing the 74ACT138 as
+I did not draw that picture. It is the logic diagram representing the 74ACT138 chip, as
 given in its [datasheet](https://www.onsemi.com/pub/Collateral/MC74AC138-D.PDF).
 
 This is a so-called 1-of-8 decoder (or 3-to-8 decoder). One chip does all.
 
 What is even more surprising is that the _outputs_ of the 74138 are low-active, and that happens
-to match my chips: they all have a low-active chip select. No extra chips needed.
+to match the memory chips I use: they all have a low-active chip select. No extra chips needed.
 
 ### 5.2.2. Description
 
 The following address decoder is prepared for the "future".
-It has a place for an 32k RAM, an 8k ROM and 6 peripherals, like 
+It has a place for a 32k RAM, an 8k ROM and 6 peripherals, like 
 GPIOs (implemented by e.g. a VIA chip - Versatile Interface Adapter) or 
 UARTS (implemented by e.g. a ACIA Asynchronous Communication Interface).
 
@@ -129,9 +131,9 @@ UARTS (implemented by e.g. a ACIA Asynchronous Communication Interface).
 
 We use A15 to select (when 0) the RAM, or (when 1) the _decoder_.
 The decoder splits the next 3 address lines (A14-A12) to 8 lines, each representing a 4k block in the memory map.
-So each decoder output line corresponds with the highest nible of the address.
+So each output line of the decoder corresponds with the highest nible of the address.
 
-I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to AND the upper two lines of the demux.
+I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to combine the upper two lines of the demux.
 I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#4-2-1-Simple-address-decoding) 
 that create the OE and WE for the memory chips.
 
@@ -159,14 +161,16 @@ Or we could add a serial port. That is for the next chapters.
 
 I wanted to test the address decode, especially the unused lines.
 
-The idea i had was too hookup SR-latches. The Set and Reset inputs happen to be low-active. So by hooking S to nO0, and R to nO1
-of the 3-to-8 decoder, I have made my own GPIO. For example, connect a LED to output Q of the SR latch. 
-By accessing address 8xxx, the Set would fire (LED on), and by accessing addres 9xxx, the Reset would fire (LED off).
+The idea I had was to hookup [SR-latches](https://www.ti.com/lit/ds/symlink/sn54ls279a.pdf). 
+The _Set_ and _Reset_ inputs happen to be low-active. 
+So by hooking S to nO0, and R to nO1 of the 3-to-8 decoder, I have made my own LED control. 
+By accessing address 8xxx, the _Set_ would fire (LED on), and by accessing addres 9xxx, the _Reset_ would fire (LED off).
+
+![SR-latch for LED control](sr-gpio.png)
 
 I hooked a second SR-latch and LED to Axxx and Bxxx, and a third to Cxxx and Dxxx. See below for the schematic.
 
 ![Decoder test schematic](decoder-test.png).
-
 
 This is the [6502 program](decoder-test.eeprom) I wrote (and flashed with the Arduino EEPROM programmer).
 
