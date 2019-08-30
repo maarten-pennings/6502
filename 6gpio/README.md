@@ -24,15 +24,15 @@ So, let's connect a LED to pin PB0, which corresponds to bit 0 of port B.
 This means that that we have to write a 00 to DDRB to make (all pins) output.
 Next, we have to write 00 and FF to ORB to have the LED blink.
 
-```
+``` asm
 LDA #$FF # All pins output
-STA $02 # DDRB
+STA $02  # DDRB
 
 LDA #$00 # All pins low
-STA $00 # ORB
+STA $00  # ORB
 
 LDA #$FF # All pins high
-STA $00 # ORB
+STA $00  # ORB
 ```
 
 The code above is a rough sketch. 
