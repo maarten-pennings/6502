@@ -4,7 +4,7 @@ Trying to build a 6502 based computer
 ## 0 Introduction
 I took up the challenge of building my own computer. I grew up with the [Commodore 64](https://en.wikipedia.org/wiki/Commodore_64).
 It has a [6502](https://en.wikipedia.org/wiki/MOS_Technology_6502) processor. This processor was also used by Apple, Atari, Nintendo. 
-It is simple, still available, and many hobbiest before me [documented](http://6502.org/) their projects. So 6502 it was.
+It is simple, still available, and many hobbyist before me [documented](http://6502.org/) their projects. So 6502 it was.
 
 I started by ordering hardware. I already had breadboards, jumper wires, resistors, LEDs. The main (first) purchase was the 6502 itself.
 The [first](https://www.aliexpress.com/item/32929325067.html) variant (left) I got was an original one from MOS from 1985. 
