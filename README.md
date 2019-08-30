@@ -19,10 +19,10 @@ although the logo and time stamp look different from the first. It does work, bu
 ## 1 Clock
 We need a clock, a source of pulses. 
 
-The [first chapter](1clock/README.md) discusses three options:
- - The hardest way is to build your own oscillator based on a crystal, but I would recommend the second option.
- - Much easier is to get that circuit as a whole in a "can".
- - Since many have it available: you could also use an Arduino Nano as clock source.
+The [first chapter](1clock/README.md) discusses three options.
+The hardest way is to build your own oscillator based on a crystal, but I would recommend the next option.
+Much easier is to get that circuit as a whole in a "can".
+Thirdly, since many have it available: you could also use an Arduino Nano as clock source.
 
 ## 2 Emulation
 The Nano as clock source was not only easy, it also gave me an idea.
@@ -64,7 +64,7 @@ In chapter [five](5decoder/README.md) we add a "future proof" one.
 
 
 ## 6 GPIO (VIA)
-We have a computer without peripherals. In this [chapter](5gpio/README.md) we add a VIA, or Versatile Interface Adapter.
+We have a computer without peripherals. In this [chapter](6gpio/README.md) we add a VIA, or Versatile Interface Adapter.
 This is a chip that implements two GPIO ports (each with 8 lines), has timers and interrupts.
 
 Finally we can do a proper blinky.
@@ -77,3 +77,6 @@ Adding the ACIA...
 
 Adding a monitor program to write/read and go...
 
+## Other
+
+Keyboard, 7-segment display, interrupt timer, single step, slow clock.
