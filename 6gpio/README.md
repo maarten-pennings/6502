@@ -6,7 +6,7 @@ The first peripheral we add is the VIA, or
 [Versatile Interface Adapter](http://archive.6502.org/datasheets/mos_6522_preliminary_nov_1977.pdf).
 his is a chip that implements two 8-bit GPIO ports, has timers and interrupts.
 
-Since we do not know the VIA, we start small
+Since we do not know the VIA, we start small.
 
 ## 6.1. No RAM
 How does the VIA work? The VIA has 16 registers, here we list the first four.
@@ -21,7 +21,7 @@ How does the VIA work? The VIA has 16 registers, here we list the first four.
  |     1111          |          |                                              |
 
 So, let's connect a LED to pin PB0, which corresponds to bit 0 of port B.
-This means that that we have to write a 00 to DDRB to make (all pins) output.
+This means that that we have to write a FF to DDRB to make (all pins) output.
 Next, we have to write 00 and FF to ORB to have the LED blink.
 
 ``` asm
