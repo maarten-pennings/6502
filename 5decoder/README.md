@@ -140,7 +140,8 @@ that create the OE and WE for the memory chips.
 
 ### 5.2.3. Address decode schematic
 
-The schematic of our 6502/ROM/RAM with future proof decoder is as follows.
+The schematic of our 6502/ROM/RAM with future proof decoder is as follows 
+(ref for [R and C](../1clock/README.md#12-clock---oscillator) values).
 
 ![Schematics](eeprom-ram-decode.png)
 
@@ -168,7 +169,8 @@ By accessing address 8xxx, the _Set_ would fire (LED on), and by accessing addre
 
 ![SR-latch for LED control](sr-gpio.png)
 
-I hooked a second SR-latch and LED to Axxx and Bxxx, and a third to Cxxx and Dxxx. See below for the schematic.
+I hooked a second SR-latch and LED to Axxx and Bxxx, and a third to Cxxx and Dxxx. See below for the schematic
+(ref for [R and C](../1clock/README.md#12-clock---oscillator) values).
 
 ![Decoder test schematic](decoder-test.png).
 
