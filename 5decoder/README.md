@@ -97,7 +97,7 @@ Device D runs from 0b11000-0b11111, or 0x18-0x1F.
 
 ## 5.2. Implementation
 
-After all the theory, let's build an address decode for our 6502 computer.
+After all the theory, let's build an address decoder for our 6502 computer.
 
 In the previous chapter we already had an address decoder, but since it only had to choose between two chips, 
 it was simple: A15 low selects RAM, A15 high selects ROM. Let's build one that not only decodes for a
@@ -125,7 +125,7 @@ to match the memory chips I use: they all have a low-active chip select. No extr
 The following address decoder is prepared for the "future".
 It has a place for a 32k RAM, an 8k ROM and 6 peripherals, like 
 GPIOs (implemented by e.g. a VIA chip - Versatile Interface Adapter) or 
-UARTS (implemented by e.g. a ACIA Asynchronous Communication Interface).
+UARTS (implemented by e.g. a ACIA Asynchronous Communication Interface Adapter).
 
 ![New address decoder](address-decode.png)
 
@@ -134,7 +134,7 @@ The decoder splits the next 3 address lines (A14-A12) to 8 lines, each represent
 So each output line of the decoder corresponds with the highest nible of the address.
 
 I plan to use an 8k ROM (not the 2k we have been using until now), so I needed to combine the upper two lines of the demux.
-I used one NAND and one NAND as inverter. Those two were "left over" from the [two](README.md#4-2-1-Simple-address-decoding) 
+I used one NAND and one NAND as inverter. Those two were "left over" from the [two](../4ram/README.md#421-Simple-address-decoding) 
 that create the OE and WE for the memory chips.
 
 
