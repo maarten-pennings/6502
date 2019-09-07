@@ -14,7 +14,7 @@
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "6"
+#define PROG_VERSION "7"
 #define PROG_DATE    "2019 sep 7"
 #define PROG_AUTHOR  "Maarten Pennings"
 
@@ -51,28 +51,40 @@ long mega328_Vcc(void) {
 // Number of bytes (actually address locations) in EEPROM
 #define EEPROM_SIZE 0x800
 
-// It is assumed that two 74HTC164 shift registers are cascaded.
-// The shift registers are controlled by a Nano: EEPROM_PIN_DATA to A and B and EEPROM_PIN_CLK to CLK.
-// Q7 of the first shift register is chained to A and B of the second.
-// The Q0-Q7 and the Q0-Q2 control A0-A10 of the EEPROM.
-#define EEPROM_PIN_DATA 12
-#define EEPROM_PIN_CLK  13
-// These pins control the (low-active) WE (write enable) and OE (output=read enable). CE is always enabled
-#define EEPROM_PIN_nWE  11
-#define EEPROM_PIN_nOE  10
-// The data pins of the EEPROM are hooked to these GPIO pins of the Arduino Nano
-#define EEPROM_PIN_D0 2
-#define EEPROM_PIN_D1 3
-#define EEPROM_PIN_D2 4
-#define EEPROM_PIN_D3 5
-#define EEPROM_PIN_D4 6
-#define EEPROM_PIN_D5 7 
-#define EEPROM_PIN_D6 8
-#define EEPROM_PIN_D7 9
-// On my board I have hooked 11 red LEDs to A0-A10, and 8 green LEDs to D0-D7
+// This sketch supports two types of shift ICs: 74HTC164 and 74HC595 (the latter has less flicker).
+// 74HTC164 (two ICs: Q7 of the first is chained to DSA and DSB of the second)
+//   The 74HTC164's are controlled by a Nano: EEPROM_PIN_DATA to DSA and DSB and EEPROM_PIN_CLK to CP.
+//   The Q0-Q7 (1st IC) and the Q0-Q2 (2nd IC) control A0-A10 of the EEPROM.
+//   MR to VCC
+// 74HC595 (two ICs: Q7S of the first is chained to DS of the second)
+//   The 74HC595's are controlled by the Nane: EEPROM_PIN_DATA to DS, EEPROM_PIN_CLK to SHCP, EEPROM_PIN_LATCH to STCP
+//   The Q0-Q7 (1st IC) and the Q0-Q2 (2n IC) control A0-A10 of the EEPROM
+//   nOE is tied to GND, nMR is tied to VCC
+// Note that the 74HC595 had one extra control line EEPROM_PIN_LATCH which, when strobed, latches all values.
+
+// These Nano pins control the data pins of the EEPROM
+#define EEPROM_PIN_D0     2
+#define EEPROM_PIN_D1     3
+#define EEPROM_PIN_D2     4
+#define EEPROM_PIN_D3     5
+#define EEPROM_PIN_D4     6
+#define EEPROM_PIN_D5     7
+#define EEPROM_PIN_D6     8
+#define EEPROM_PIN_D7     9
+// These Nano pins control the (low-active) OE (output=read enable) and WE (write enable) of the EEPROM
+#define EEPROM_PIN_nOE   10
+#define EEPROM_PIN_nWE   11
+// These Nano pins control the shift registers
+#define EEPROM_PIN_DATA  12
+#define EEPROM_PIN_CLK   13
+#define EEPROM_PIN_LATCH A0
+
+// Undefine next macro when using 74HTC164 
+// But you could leave it defined: nothing will happen since pin EEPROM_PIN_LATCH is unconnected.
+//#undef EEPROM_PIN_LATCH 
 
 
-// Set all data pins to input or output
+// Set all Nano data pins to `input`
 void eeprom_input( bool input ) {
   if( input ) {
     pinMode(EEPROM_PIN_D0, INPUT);
@@ -95,25 +107,45 @@ void eeprom_input( bool input ) {
   }
 }
 
+// Fill shift registers with `addr`
+void eeprom_setaddr( uint16_t addr) {
+  digitalWrite(EEPROM_PIN_CLK, LOW);
+  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr>>8 );
+  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr&0xff );
+  #ifdef EEPROM_PIN_LATCH
+  digitalWrite(EEPROM_PIN_LATCH, HIGH);
+  digitalWrite(EEPROM_PIN_LATCH, LOW);
+  #endif
+}
+
 // Initialize GPIO pins and shift registers
 void eeprom_init() {
-  // On EEPROM, set Write Enable to "off" (low active)
-  digitalWrite(EEPROM_PIN_nWE,HIGH);
-  // On EEPROM, set Output Enable to "off" (low active)
-  digitalWrite(EEPROM_PIN_nOE,HIGH);  
-
-  // Set all control pins as output
-  pinMode(EEPROM_PIN_DATA, OUTPUT);
-  pinMode(EEPROM_PIN_CLK, OUTPUT);
-  pinMode(EEPROM_PIN_nWE, OUTPUT);
-  pinMode(EEPROM_PIN_nOE, OUTPUT);
+  // Give all output pins a defined level
+  digitalWrite(EEPROM_PIN_nWE  ,HIGH); // On EEPROM, set Write Enable to "off" (low active)
+  digitalWrite(EEPROM_PIN_nOE  ,HIGH); // On EEPROM, set Output Enable to "off" (low active)
+  digitalWrite(EEPROM_PIN_DATA ,LOW ); // On Shift IC, set data low (not so important)
+  digitalWrite(EEPROM_PIN_CLK  ,LOW ); // On Shift IC, set clock low (rising edge later will clock-in data)
+  #ifdef EEPROM_PIN_LATCH
+  digitalWrite(EEPROM_PIN_LATCH,LOW ); // On Shift IC, set latch low (rising edge later will latch data)
+  #endif
   
-  // Go to default: on EEPROM, set Output Enable to "on" (low active) so that data bus LEDs are active (Nano must be input)
-  eeprom_input(true);
-  digitalWrite(EEPROM_PIN_nOE,LOW);
+  // Set all control pins as output
+  pinMode(EEPROM_PIN_nWE  , OUTPUT);
+  pinMode(EEPROM_PIN_nOE  , OUTPUT);
+  pinMode(EEPROM_PIN_DATA , OUTPUT);
+  pinMode(EEPROM_PIN_CLK  , OUTPUT);
+  #ifdef EEPROM_PIN_LATCH
+  pinMode(EEPROM_PIN_LATCH, OUTPUT);
+  #endif
 
-  // Initialize the shift registers (Clears address LEDs)
-  eeprom_read(0x000); 
+  // On my board I have hooked red LEDs to Ax lines, and green LEDs to Dx lines; play start-up animation
+  uint16_t addr=1;
+  while( addr<EEPROM_SIZE ) { eeprom_setaddr(addr); addr<<=1; delay(50); } 
+  while( addr>0 ) { eeprom_setaddr(addr); addr>>=1; delay(50); } 
+
+  // The default mode is to show the data contents of the last used EEPROM address. 
+  // So, on EEPROM, set Output Enable to "on" (low active)
+  eeprom_read(0x0000);
 }
 
 // Record the last addr shifted in (used by the physical buttons)
@@ -128,9 +160,7 @@ uint8_t eeprom_read(uint16_t addr) {
   // Switch data pins of Arduino to input
   eeprom_input(true);
   // Set address lines
-  digitalWrite(EEPROM_PIN_CLK, LOW);
-  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr>>8 );
-  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr&0xff );
+  eeprom_setaddr(addr);
   // Go back to default: On EEPROM, set Output Enable to "on" (low active), Nano is input
   digitalWrite(EEPROM_PIN_nOE,LOW);
   delayMicroseconds(1); // "Address to Output Delay" is 150ns, so 1000ns should be enough
@@ -157,9 +187,7 @@ void eeprom_write(uint16_t addr, uint8_t data ) {
   // Switch data pins to output
   eeprom_input(false);
   // Set address lines
-  digitalWrite(EEPROM_PIN_CLK, LOW);
-  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr>>8 );
-  shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr&0xff );
+  eeprom_setaddr(addr);
   // Write data pins
   digitalWrite(EEPROM_PIN_D0, data & (1<<0) );
   digitalWrite(EEPROM_PIN_D1, data & (1<<1) );
