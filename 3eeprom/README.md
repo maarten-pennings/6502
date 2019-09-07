@@ -22,7 +22,7 @@ We will do the following experiments
  - [3.2. 6502 with EEPROM and Nano](README.md#32-6502-with-EEPROM-and-Nano) - Use a programmed EEPROM (6502+Nano)
  - [3.3. 6502 with EEPROM and oscillator](README.md#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
  - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
- - [3.5. EEPROM programmer V2](README.md#31-EEPROM-programmer-V2) - Improving the EEPROM programmer
+ - [3.5. EEPROM programmer V2](README.md#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
 
 
 ## 3.1. EEPROM programmer
