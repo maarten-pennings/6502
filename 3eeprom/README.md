@@ -65,21 +65,21 @@ The buttons form an alternative user interface, but only allows reading.
 
 ### 3.1.2. Hardware of the EEPROM programmer
 
-This is the schematic of my _Arduino EEPROM programmer_:
+This is the schematic of my _Arduino EEPROM Programmer_:
 
-![Arduino EEPROM programmer schematic](eeprom-programmer.png)
+![Arduino EEPROM Programmer schematic](eeprom-programmer.png)
 
 I used 10k for the pull-ups and pull-downs. I used the quite large value of 1k for the current limiting resistors of the LEDs.
 V_R = 5-2 = 3V, so that I_R = 3/1000 = 3mA. If all 11+8 LEDs are on, they consume only 60mA. Recall, the board is running from USB.
 
 And this a picture of my breadboard:
 
-![Arduino EEPROM programmer breadboard](eeprom-programmer.jpg)
+![Arduino EEPROM Programmer breadboard](eeprom-programmer.jpg)
 
 
 ### 3.1.3. Firmware of the EEPROM programmer
 
-The Nano in the Arduino EEPROM programmer needs a sketch.
+The Nano in the Arduino EEPROM Programmer needs a sketch.
 I ended up with nearly a "product quality" [sketch](eeprom-programmer).
 If you want less, copy only the "EEPROM" section.
 
@@ -87,7 +87,7 @@ You can connect to the Nano via a terminal program (UART over USB),
 and give the Nano commands to write or read EEPROM locations. 
 See below for a demo session. 
 
-![Terminal on the Arduino EEPROM programmer](terminal.png)
+![Terminal on the Arduino EEPROM Programmer](terminal.png)
 
 The `>>` is the prompt. After the prompt I typed commands. The next line(s) are the response.
 
@@ -135,7 +135,7 @@ and the ISR routine (when an interrupt occurs) increments zero page address 44.
 ```
 
 To write this program to the EEPROM we wrote this [script](eeprom-programmer/main33inc-isr44inc.eeprom).
-When sending it via a terminal to the Arduino EEPROM programmer, this is the output.
+When sending it via a terminal to the Arduino EEPROM Programmer, this is the output.
 
 ```
 Program MAIN                                                                    
@@ -307,7 +307,7 @@ This is going to be painfull, so let's first switch to a simple program.
 703 4C 02 07 #        JMP LOOP
 ```
 
-One of the [demo scripts](eeprom-programmer/inx-loop.eeprom) is the script for the Arduino EEPROM programmer.
+One of the [demo scripts](eeprom-programmer/inx-loop.eeprom) is the script for the Arduino EEPROM Programmer.
 We flashed the EEPROM, and put it in the board with the Nano, to verify the trace.
 Here we see the loop unroll.
 
@@ -420,7 +420,7 @@ This position we have a changing bit                                  ^
 
 So I hooked a LED to A4.
 
-The complete sketch is available as [script](eeprom-programmer/blinky.eeprom) for my Arduino EEPROM programmer.
+The complete sketch is available as [script](eeprom-programmer/blinky.eeprom) for my Arduino EEPROM Programmer.
 Once the EEPROM is programmed, plug it in the breadboard of the [previous section](#33-6502-with-EEPROM-and-oscillator).
 
 And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
@@ -473,9 +473,9 @@ The new board looks like this
 ### Software improvements
 
 The software improvements are also small
- - Includes support for 74HC595 (but the 74164 still works)
- - Arduino eeprom programmer now polls the EEPROM for write to complete, instead of having a "long" time-out 
- - The `verify` command now prints the programming time
+ - Includes support for 74HC595 (but the 74164 still works).
+ - Arduino EEPROM Programmer now polls the EEPROM for write to complete, instead of having a "long" time-out. 
+ - The `verify` command now prints the write/programming time.
  - Added power-on LED animation, so that the user can see when the Nano is booted.
 
 The first point was surprisingly hard.
