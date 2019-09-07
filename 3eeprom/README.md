@@ -23,6 +23,7 @@ We will do the following experiments
  - [3.3. 6502 with EEPROM and oscillator](README.md#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
  - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
  - [3.5. EEPROM programmer V2](README.md#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
+ - [3.6. EEPROM programmer V3](README.md#36-EEPROM-programmer-V3) - Adding support for 8k EEPROMs
 
 
 ## 3.1. EEPROM programmer
@@ -493,11 +494,21 @@ On closer examination; they appear to be different: the print on the back side d
    This is a problem when we write 0x00, we cannot see when the internal write process finishes.
    So when writing 00, I revert to the old approach of simply waiting 10ms.
 
-### Final comment
+
+## 3.6. EEPROM programmer V3
 
 I started the whole V2 programmer, because I wanted to add support for a bigger EEPROM.
-Instead of the 2k chips AT28C16, I received 8k EEPROMs [AT28C64](https://www.aliexpress.com/item/33024751334.html).
-However, in the shipment of 5, I cannot write any of them... grrr.
-Is this broken hardware again? On my inquiry I got a 1-line response "Tested goods have no problem".
+Instead of the 2k chips (AT28C16), I received 8k EEPROMs [AT28C64](https://www.aliexpress.com/item/33024751334.html).
+I ordered a set of five. However, out of these five, I cannot _write_ a single one ... grrr.
+Is this broken hardware again? On my inquiry I got a one-line response "Tested goods have no problem".
 
+I did order new 8k EEPROMs, but again from China, so have to wait.
 
+Adding support for the bigger EEPROM should be feasible; the figure below shows the two compared.
+
+![AT28C16 vs AT28C64](AT28Cxx.png)
+
+Note that we problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
+wiring VIN should not be a problem. For the A1/nWE we need a simple mux that we can make with one quad-NAND.
+
+To be continued...
