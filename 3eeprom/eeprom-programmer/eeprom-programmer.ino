@@ -1,15 +1,21 @@
-// Arduino EEPROM programmer (for the AT28C16)
+// Arduino EEPROM Programmer (for the AT28C16)
 // Features a complete command interpreter
+//   See https://github.com/maarten-pennings/6502/tree/master/3eeprom
+
 
 // Todo:
-// - maybe: add shift registers with latches so that we don't see the LEDs flicker
-// - detect lost characters in uart transmission
+// - Add shift registers with latches so that we don't see the LEDs flicker
+// - detect lost characters in uart transmission (how?)
+// - IO to control 2k or 8k chip
+// - command 'opt size <size> offset <offset>'
+
+// Allow 'read 56k 1p' with factors k for 1024 and p for 256
 
 
-#define PROG_NAME    "Arduino EEPROM programmer"
+#define PROG_NAME    "Arduino EEPROM Programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "5"
-#define PROG_DATE    "2019 aug 18"
+#define PROG_VERSION "6"
+#define PROG_DATE    "2019 sep 7"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -46,7 +52,9 @@ long mega328_Vcc(void) {
 #define EEPROM_SIZE 0x800
 
 // It is assumed that two 74HTC164 shift registers are cascaded.
-// They are controlled via EEPROM_PIN_DATA, EEPROM_PIN_CLK of the Nano; they control A0-A10 of the EEPROM
+// The shift registers are controlled by a Nano: EEPROM_PIN_DATA to A and B and EEPROM_PIN_CLK to CLK.
+// Q7 of the first shift register is chained to A and B of the second.
+// The Q0-Q7 and the Q0-Q2 control A0-A10 of the EEPROM.
 #define EEPROM_PIN_DATA 12
 #define EEPROM_PIN_CLK  13
 // These pins control the (low-active) WE (write enable) and OE (output=read enable). CE is always enabled
@@ -64,10 +72,8 @@ long mega328_Vcc(void) {
 // On my board I have hooked 11 red LEDs to A0-A10, and 8 green LEDs to D0-D7
 
 
-// Set all data pins to input or output (cached to save some time - does this help?)
-bool eeprom_input_prev;
+// Set all data pins to input or output
 void eeprom_input( bool input ) {
-  if( input==eeprom_input_prev ) return;
   if( input ) {
     pinMode(EEPROM_PIN_D0, INPUT);
     pinMode(EEPROM_PIN_D1, INPUT);
@@ -87,7 +93,6 @@ void eeprom_input( bool input ) {
     pinMode(EEPROM_PIN_D6, OUTPUT);
     pinMode(EEPROM_PIN_D7, OUTPUT);
   }
-  eeprom_input_prev= input;
 }
 
 // Initialize GPIO pins and shift registers
@@ -103,11 +108,8 @@ void eeprom_init() {
   pinMode(EEPROM_PIN_nWE, OUTPUT);
   pinMode(EEPROM_PIN_nOE, OUTPUT);
   
-  // All data pins input
-  eeprom_input_prev= false; 
+  // Go to default: on EEPROM, set Output Enable to "on" (low active) so that data bus LEDs are active (Nano must be input)
   eeprom_input(true);
-
-  // Go to default: on EEPROM, set Output Enable to "on" (low active) so that data bus LEDs are active
   digitalWrite(EEPROM_PIN_nOE,LOW);
 
   // Initialize the shift registers (Clears address LEDs)
@@ -123,13 +125,13 @@ uint8_t eeprom_read(uint16_t addr) {
   eeprom_addr_last= addr;
   // On EEPROM, set Output Enable to "off" (low active)
   digitalWrite(EEPROM_PIN_nOE,HIGH);  
-  // Switch data pins to input
+  // Switch data pins of Arduino to input
   eeprom_input(true);
   // Set address lines
   digitalWrite(EEPROM_PIN_CLK, LOW);
   shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr>>8 );
   shiftOut(EEPROM_PIN_DATA, EEPROM_PIN_CLK, MSBFIRST, addr&0xff );
-  // Go back to default: On EEPROM, set Output Enable to "on" (low active)
+  // Go back to default: On EEPROM, set Output Enable to "on" (low active), Nano is input
   digitalWrite(EEPROM_PIN_nOE,LOW);
   delayMicroseconds(1); // "Address to Output Delay" is 150ns, so 1000ns should be enough
   // Read data pins
@@ -172,9 +174,27 @@ void eeprom_write(uint16_t addr, uint8_t data ) {
   delayMicroseconds(1); // "Write Pulse Width " is 1000ns
   // On EEPROM, set Write Enable to "off" (low active)
   digitalWrite(EEPROM_PIN_nWE,HIGH);
-  delayMicroseconds(10000); // "Write Cycle Time" is 1ms, but we need 10: https://youtu.be/K88pgWhEb1M?t=3130
-  // Go back to default: On EEPROM, set Output Enable to "on" (low active)
+  delayMicroseconds(1000); // "Write Cycle Time" is 1ms
+  // Go back to default: On EEPROM, set Output Enable to "on" (low active), Nano must be input
+  eeprom_input(true);
   digitalWrite(EEPROM_PIN_nOE,LOW);
+  // Check write completed 
+  //   Out of the 5 chips I have, for 4 the D7 inversion is not working.
+  //   The EEPROM simply returns 00 for D0-F7 until write cycle is completed and the real data appears.
+  //   The 1 good EEPROM returns random bits (but MSB inversed) for D0-F7 until write cycle is completed and the real data appears.
+  //   So, I poll for the correct 8 bits to appear. Unfortunately, this does not work when writing 00.
+  //Serial.print("[");
+  uint32_t t1, t0=micros();
+  while( 1 ) {
+    uint8_t data2= eeprom_read(addr); 
+    t1=micros();
+    //Serial.print(data2,HEX);
+    //Serial.write(" ");
+    if( data!=0 && data==data2 ) break;
+    if( t1-t0 > 10*1000 ) break; // timeout of 10ms as in https://youtu.be/K88pgWhEb1M?t=3130
+  }
+  //Serial.print(t1-t0);
+  //Serial.println("us]");
 }
 
 
@@ -330,7 +350,7 @@ const char cmd_write_longhelp[] PROGMEM =
   "- next lines having 0 or more <data> will also be written\n"
   "- the prompt for next lines show the streaming mode (write, program, or verify)\n"
   "- the prompt for next lines also show target address\n"
-  "- a line with * or a command will stop streamingmode\n"
+  "- a line with * or a command will stop streaming mode\n"
 ;
   
 const char cmd_program_longhelp[] PROGMEM = 
@@ -342,11 +362,12 @@ const char cmd_program_longhelp[] PROGMEM =
 // The handler for the "verify" command
 char * s_clear = "clear";
 char * s_print = "print";
+uint32_t cmd_ms;
 void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   // verify clear
   if( argc==2 ) {
-    if( strstr(s_clear,argv[1])==s_clear) { cmd_stream_errors=0; if( argv[0][0]!='@') Serial.println(F("verify: cleared")); }
-    else if( strstr(s_print,argv[1])==s_print) { Serial.print(F("verify: ")); Serial.print(cmd_stream_errors); Serial.println(F(" errors")); }
+    if( strstr(s_clear,argv[1])==s_clear) { cmd_ms= millis(); cmd_stream_errors=0; if( argv[0][0]!='@') Serial.println(F("verify: cleared")); }
+    else if( strstr(s_print,argv[1])==s_print) { Serial.print(F("verify: ")); Serial.print(cmd_stream_errors); Serial.print(F(" errors (")); Serial.print(millis()-cmd_ms);Serial.println(F("ms)"));}
     else Serial.println(F("ERROR: verify: expected <addr> <data>... or 'clear' or 'print'"));
   } else {
     cmd_main_write(desc,argc,argv);
@@ -356,12 +377,12 @@ void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 const char cmd_verify_longhelp[] PROGMEM = 
   "SYNAX: verify <addr> <data>...\n"
   "- reads byte from EEPROM location <addr> and compares to <data>\n"
-  "- prints <data> if equal, or '<data>~<read>' if unequal, where <read> is read data\n"
+  "- prints <data> if equal, otherwise '<data>~<read>', where <read> is read data\n"
   "- unequal values increment global error counter\n"
   "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode (see `write` command)\n"
   "SYNAX: verify print\n"
-  "- prints global error counter\n"
+  "- prints global error counter (and ms elapsed since last 'verify clear')\n"
   "SYNAX: [@]verify clear\n"
   "- sets global error counter to 0\n"
   "- with @ present, no feedback is printed\n"
@@ -410,7 +431,7 @@ void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
 
 const char cmd_erase_longhelp[] PROGMEM = 
   "SYNAX: erase [ <addr> [ <num> [ <data> ] ] ]\n"
-  "- erase <num> bytes from EEPROM, starting at location <addr>, by writing <data>\n"
+  "- erase <num> bytes in EEPROM, starting at location <addr>, by writing <data>\n"
   "- when <data> is absent, erase by writing 1's (<data>=FF)\n"
   "- when <num> is absent, erase one page (<num>=100)\n"
   "- when <addr> is absent, erase entire EEPROM\n"
@@ -434,7 +455,8 @@ void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 const char cmd_info_longhelp[] PROGMEM = 
   "SYNAX: info\n"
   "- shows application information (name, author, version, date)\n"
-  "- also shows supported EEPROM, and some info on programmer (USB voltage, cpu speed)\n"
+  "- shows supported EEPROM(s)\n"
+  "- shows cpu info (cpu voltage, cpu speed)\n"
 ;
 
 // The handler for the "echo" command
@@ -478,7 +500,7 @@ const char cmd_echo_longhelp[] PROGMEM =
   "- with @ present, no feedback is printed\n"
   "- useful in scripts; output is relevant, but input much less\n"
   "NOTES:\n"
-  "- 'echo line' prints a white line\n"
+  "- 'echo line' prints a white line (there are no <word>s)\n"
   "- 'echo line enable' prints 'enable'\n"
   "- 'echo line disable' prints 'disable'\n"
   "- 'echo line line' prints 'line'\n"

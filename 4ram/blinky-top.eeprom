@@ -70,8 +70,9 @@ program 7FC 00 F8
 program 7FE 30 F8
 
 echo line
-r 000 40
-r 7F0 10
+read 000 40
+read 7F0 10
 
 echo line
 verify print
+@echo enable
