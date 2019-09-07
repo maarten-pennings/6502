@@ -22,6 +22,7 @@ We will do the following experiments
  - [3.2. 6502 with EEPROM and Nano](README.md#32-6502-with-EEPROM-and-Nano) - Use a programmed EEPROM (6502+Nano)
  - [3.3. 6502 with EEPROM and oscillator](README.md#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
  - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
+ - [3.5. EEPROM programmer V2](README.md#31-EEPROM-programmer-V2) - Improving the EEPROM programmer
 
 
 ## 3.1. EEPROM programmer
@@ -424,5 +425,79 @@ Once the EEPROM is programmed, plug it in the breadboard of the [previous sectio
 
 And enjoy the [blinking](https://youtu.be/LYZypJ-g0uM).
 
+
+## 3.5. EEPROM programmer V2
+
+After doing chapter 4 (RAM) and 5 (decoder) I received a new package with 74595 ICs. I decided to upgrade my EEPROM programmer.
+
+### 3.5.1. The new 74595 shift register
+
+This is the internals of the [74164](https://assets.nexperia.com/documents/data-sheet/74HC_HCT164.pdf):
+a cascade of flip-flops with output buffers.
+
+![74164 internals](74164.png)
+
+The 74595's are similar to the 74164's, but they have two extra features: an extra layer of latches, and a 3-state output.
+
+This is the internals of the [74595](https://assets.nexperia.com/documents/data-sheet/74HC_HCT595.pdf).
+
+![74595 internals](74595.png)
+
+The first feature means that the shift registers are isolated from the output: first the Nano shifts the bits in the shift 
+flip-flops (using the DS line for the data bits and SHCP line for the shift clock pulse).
+Next the Nano copies the shift flip-flops with one pulse on the STCP ("store clock pulse") in the latches.
+
+This feature helps us a little bit: I have LEDs on the address lines, and they flicker during shifting.
+
+The other feature is the output stage. The 74194 has a buffer ("amplifier") that puts the output signal on the Q lines. 
+This is known as 2-state output (namely low or high). The 74595 can disable the buffer via the nOE line, makig the Q-line 
+high-impedance (the third state). This would allow the outputs of two shift registers be tied together as long as at
+most one is enabled. We do not use this feature in the EEPROM programmer.
+
+### New board schematics
+
+The schematics of the new EEPROM programmer shows only a couple of minor improvements
+ - The 74595's replace the 74164's, so that there is no LED flicker during shifting
+ - The current limiting resistors for the (address and data) LEDs are increased from 1k to 10k (the LEDs were too bright)
+ - The current limiting resistors for the (address and data) LEDs are replaced
+   by a [resistor array](https://www.aliexpress.com/item/32345035507.html) to save space
+ - The two switches now have an 100nF capacitor parallel to the switch to mitigate debounce effects
+ - I removed the two pull-ups for nOE and nWE - I believe the Nano ports are stronger anyhow
+ 
+![EEPROM Programmer V2 schematics](eeprom-programmer-74595.png)
+
+The new board looks like this
+
+![EEPROM Programmer V2 board](eeprom-programmer-74595.jpg)
+
+### Software improvements
+
+The software improvements are also small
+ - Includes support for 74HC595 (but the 74164 still works)
+ - Arduino eeprom programmer now polls the EEPROM for write to complete, instead of having a "long" time-out 
+ - The `verify` command now prints the programming time
+ - Added power-on LED animation, so that the user can see when the Nano is booted.
+
+The first point was surprisingly hard.
+This is what the datasheet specifies: 
+
+> The AT28C16 provides DATA POLLING to signal the completion of a write cycle. During a write cycle, an attempted read of the data being written results in the complement of that data for I/O7 (the other outputs are indeterminate). When the write cycle is finished, true data appears on all outputs.
+
+I have five AT28C16 chips, ordered in one [batch](https://www.aliexpress.com/item/32984222148.html).
+On closer examination; they appear to be different: the print on the back side differs. This is what I found for the data polling
+ - One chip behaves accoring to datasheet.
+   For approximately 5ms of polling (continuously reading all 8 data lines) the value read is "indeterminate" 
+   but the MSB is inverted with what was written. After the 5ms the values read are what is written.
+ - Two chips are so "fast" (0.350ms) that the first poll is already the value written.
+ - Two chips return always 0x00 when polling and after about 5ms return the written value. So there is no inverted MSB.
+   This is a problem when we write 0x00, we cannot see when the internal write process finishes.
+   So when writing 00, I revert to the old approach of simply waiting 10ms.
+
+### Final comment
+
+I started the whole V2 programmer, because I wanted to add support for a bigger EEPROM.
+Instead of the 2k chips AT28C16, I received 8k EEPROMs [AT28C64](https://www.aliexpress.com/item/33024751334.html).
+However, in the shipment of 5, I cannot write any of them... grrr.
+Is this broken hardware again? On my inquiry I got a 1-line response "Tested goods have no problem".
 
 
