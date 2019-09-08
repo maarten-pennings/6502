@@ -59,7 +59,8 @@ And then adding 8 Set/Reset latches. The diagram below shows a concept:
 
 ![Secondary address decoder](address-decode-gpio.png)
 
-This (sub) decoder ignores line A11. So, to switch LED3 on access memory 86XX and to swicth it off access 87XX.
+This (sub) decoder decodes lines A0-A2. So, to switch LED3 on access memory 8006 and to switch it off access 8007
+(but 8016 and 8017 or 8FF6 and 8FF7 work as well).
 
 
 ## 6.3. 7-segment display
