@@ -75,7 +75,7 @@ memory chips (A,B, C, and D).
 
 We see the AND-gate pattern that was _inside_ the chip, now also emerge _outside_ the chip.
 
-This is the architecture that we aim for in [this chapter](README.md#52-Implementation).
+This is the architecture that we aim for in the [next section](README.md#52-Implementation).
 
 ## 5.1.4. Memory map
 
