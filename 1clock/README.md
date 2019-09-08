@@ -184,7 +184,7 @@ LEDs on "lower" address lines would flicker so fast that they would look "always
 
 Note that A15 start flickering immediately after power on. 
 When we keep the reset button pressed, it stops flickering.
-When releaseing the reset, the flickering starts.
+When releasing the reset, the flickering starts again.
 Success, we have a 6502 in "free run"!
 
 
