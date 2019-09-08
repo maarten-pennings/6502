@@ -91,9 +91,7 @@ I hooked the 8 data lines to the data lines of the 6502.
 I hooked the nCS to the 8xxx line of the address decoder.
 And I hooked ϕ2 to ϕ2 of the 6502.
 
-I must say that I'm still a bit puzzled by the OR construction: it generates a falling edge on CP
-when ϕ2 falls, and the segment driver is selected (nCS is low). However the datasheet of the 74273 
-says the latching happens on rising edge of CP.
+> I must say that I'm still a bit puzzled by the OR construction: it generates a falling edge on CP when ϕ2 falls, and the segment driver is selected (nCS is low). However the datasheet of the 74273 says the latching happens on rising edge of CP. So why is the inverter not needed?
 
 On the photo, see the 6502 computer (crystal, EEPROM, RAM, segment decoder and even still 
 the 3 S/R latches with LEDS, and the 2 addres line LEDS), connected to the 7-segment driver.
