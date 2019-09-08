@@ -63,11 +63,13 @@ When adding the RAM next to the ROM we already had a minimalistic address decode
 In chapter [five](5decoder/README.md) we add a "future proof" one.
 
 
-## 6 GPIO (VIA)
-We have a computer without peripherals. In this [chapter](6gpio/README.md) we add a VIA, or Versatile Interface Adapter.
-This is a chip that implements two GPIO ports (each with 8 lines), has timers and interrupts.
+## 6 GPIO
+We have a computer without peripherals. In this [chapter](6gpio/README.md) we investigate options
+for "General Purpose Input and Output" or GPIO ports. We look back at solutions used in previous chapters,
+and introduce new ones. One of the candidates is the VIA, or Versatile Interface Adapter that 
+was produced by MOS, the manufacturer of the 6502.
 
-Finally we can do a proper blinky.
+The VIA is a chip that implements two GPIO ports (each with 8 lines), has timers and interrupts.
 
 ## 7 UART
 
