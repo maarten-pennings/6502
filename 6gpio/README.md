@@ -67,9 +67,10 @@ This (sub) decoder decodes lines A0-A2. So, to switch LED3 on access memory 8006
 
 One of my goals is to turn this 6502 computer into a hex programmable one.
 This means that it needs a display for the address (4 x 7-segment) and for the data (2 x 7-segment).
-Most boards that are around trade hardware for software, the boards save on hadrware and write software that scans the segments.
+Most boards that are around trade hardware for software: the boards save on hardware and compensate that with more software 
+(that, in this case, scans the segments).
 
-For me this project is about learning hardware, so my goal is to make a 7-segment peripheral that relies largely on hardware.
+For me this project is about learning _hardware_, so my goal is to make a 7-segment peripheral that relies largely on hardware.
 
 ### 6.3.1. Concept
 
@@ -80,7 +81,7 @@ then the output of the flip-flops can drive LEDs.
 The cost here is one [octal D flip-flop](https://www.ti.com/lit/ds/symlink/sn54ls273-sp.pdf) IC per 7-segment display. 
 So we would need 6. And we need a secondary address decoder to select one of the 6.
 
-I made a first prototype of a single 7-segment driver. This is the concept:
+I made a first prototype of a single 7-segment driver. This is the schematic:
 
 ![7-segment driver schematics](7-segment-driver.png)
 
@@ -89,6 +90,7 @@ I made a first prototype of a single 7-segment driver. This is the concept:
 I hooked the 8 data lines to the data lines of the 6502.
 I hooked the nCS to the 8xxx line of the address decoder.
 And I hooked ϕ2 to ϕ2 of the 6502.
+
 I must say that I'm still a bit puzzled by the OR construction: it is supposed to generate a positive edge on CP
 when ϕ2 falls, and the segment driver is selected.
 
@@ -99,10 +101,10 @@ the 3 S/R latches with LEDS, and the 2 addres line LEDS), connected to the 7-seg
 
 ### 6.3.3. Firmware
 
-To put e.g. a 2 on the display, segments a, b, g, e, and d need to be on. 
+To put e.g. a `2` on the display, segments a, b, g, e, and d need to be on. 
 The bits are mapped as follows to the segments `dp|g|f|e|d|c|b|a`.
-Therefore the bit pattern for 2 is 01011011. 
-Likewise, the bit pattern for 6, 5, 0, 2 and - were constructed.
+Therefore the bit pattern for `2` is `01011011`. 
+Likewise, the bit patterns for `6`, `5`, `0`, `2` and `-` were constructed.
 
 The complete [script](7-segment.eeprom) adds a wait routine and loops back.
 
@@ -132,7 +134,6 @@ JSR WAIT
 ### 6.3.4. Test
 
 Power to the board, reset, and [enjoy](https://youtu.be/t_L_AEqfp-k).
-
 
 
 ## 6.4. VIA
