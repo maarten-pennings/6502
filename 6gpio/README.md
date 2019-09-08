@@ -4,11 +4,18 @@ Trying to build a 6502 based computer.
 We are going to add peripherals to our computer.
 In this chapter we look at various options for General Purpose Input and Output (GPIO) ports.
 
+ - [6.1. Address pins](README.md#61-Address-pins) - Looking back: LED on address pin
+ - [6.2. Address decoding](README.md#62-Address-decoding) - Looking back: using the memory decoder
+ - [6.3. 7-segment display](README.md#63-7-segment-display) - Do-it-yourself GPIO peripheral: 7-segment display
+ - [6.4. VIA](README.md#64-VIA) - The official GPIO from MOS
+
 
 ## 6.1. Address pins
 
 One of the first things we did to get feedback from the 6502 is to hook up LEDs to address lines.
 We used two approaches.
+
+### 6.1.1. Address pins
 
 The first approach was just to monitor the address changes. 
 We used this during the [free run](../1clock#12-clock---oscillator).
@@ -19,7 +26,9 @@ This means that the blink frequency of A15 is 8Hz, quite fast.
 This first approach is ok for a free run, but as soon as we start writing real programs, the loops
 are typically much smaller, so monitoring an address line no longer works.
 
-Well, enter the second approach. We had a clever idea of having wait loops on specific address ranges.
+### 6.1.2. Address range
+
+Enter the second approach. We had a clever idea of having wait loops on specific address ranges.
 As long as the wait loop executes in that range, some address pins have a fixed value.
 As long as the wait loop executes in another range, that address pins has the opposite value.
 We can use that for creating a blink with configurable.
@@ -48,9 +57,82 @@ Fully flexible; down-side is that we only have 3 LEDs.
 Of course, this could be extended by having another 3-to-8 decoder in e.g. the 8xxx range.
 And then adding 8 Set/Reset latches. The diagram below shows a concept:
 
-![Address decoder for GPIO](address-decode-gpio.png)
+![Secondary address decoder](address-decode-gpio.png)
 
 This (sub) decoder ignores line A11. So, to switch LED3 on access memory 86XX and to swicth it off access 87XX.
+
+
+## 6.3. 7-segment display
+
+One of my goals is to turn this 6502 computer into a hex programmable one.
+This means that it needs a display for the address (4 x 7-segment) and for the data (2 x 7-segment).
+Most boards that are around trade hardware for software, the boards save on hadrware and write software that scans the segments.
+
+For me this project is about learning hardware, so my goal is to make a 7-segment peripheral that relies largely on hardware.
+
+### 6.3.1. Concept
+
+The idea that I had was as follows: the activation signal from the address decoder, the chip select, could trigger a clock
+pulse of eight D-type flop-flops. If we connect the inputs of the flip flops to the 8 address lines, 
+then the output of the flip-flops can drive LEDs. 
+
+The cost here is one [octal D flip-flop](https://www.ti.com/lit/ds/symlink/sn54ls273-sp.pdf) IC per 7-segment display. 
+So we would need 6. And we need a secondary address decoder to select one of the 6.
+
+I made a first prototype of a single 7-segment driver. This is the concept:
+
+![7-segment driver schematics](7-segment-driver.png)
+
+### 6.3.2. Board
+
+I hooked the 8 data lines to the data lines of the 6502.
+I hooked the nCS to the 8xxx line of the address decoder.
+And I hooked ϕ2 to ϕ2 of the 6502.
+I must say that I'm still a bit puzzled by the OR construction: it is supposed to generate a positive edge on CP
+when ϕ2 falls, and the segment driver is selected.
+
+On the photo, see the 6502 computer (crystal, EEPROM, RAM, segment decoder and even still 
+the 3 S/R latches with LEDS, and the 2 addres line LEDS), connected to the 7-segment driver.
+
+![7-segment board](7-segment.jpg)
+
+### 6.3.3. Firmware
+
+To put e.g. a 2 on the display, segments a, b, g, e, and d need to be on. 
+The bits are mapped as follows to the segments `dp|g|f|e|d|c|b|a`.
+Therefore the bit pattern for 2 is 01011011. 
+Likewise, the bit pattern for 6, 5, 0, 2 and - were constructed.
+
+The complete [script](7-segment.eeprom) adds a wait routine and loops back.
+
+```
+LDA #%01111101
+STA $8000
+JSR WAIT
+
+LDA #%01101101
+STA $8000
+JSR WAIT
+
+LDA #%00111111
+STA $8000
+JSR WAIT
+
+LDA #%01011011
+STA $8000
+JSR WAIT
+
+LDA #%01000000
+STA $8000
+JSR WAIT
+```
+
+
+### 6.3.4. Test
+
+Power to the board, reset, and [enjoy](https://youtu.be/t_L_AEqfp-k).
+
+
 
 ## 6.4. VIA
 The first peripheral we add is the VIA, or 
