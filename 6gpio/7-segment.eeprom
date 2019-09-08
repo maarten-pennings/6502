@@ -1,0 +1,56 @@
+@echo disable
+# 7-segment test, showing 6502-
+# The 7-segment driver is memory mapped at 8000
+@verify clear
+
+program 000 *
+         # F800 MAIN
+78       # F800        SEI
+         # F801 SHOW6
+A9 7D    # F801        LDA #%01111101
+8D 00 80 # F803        STA $8000
+20 2C F8 # F806        JSR WAIT
+         # F809 SHOW5
+A9 6D    # F809        LDA #%01101101
+8D 00 80 # F80B        STA $8000
+20 2C F8 # F80E        JSR WAIT
+         # F811 SHOW0
+A9 3F    # F811        LDA #%00111111
+8D 00 80 # F813        STA $8000
+20 2C F8 # F816        JSR WAIT
+         # F819 SHOW2
+A9 5B    # F819        LDA #%01011011
+8D 00 80 # F81B        STA $8000
+20 2C F8 # F81E        JSR WAIT
+         # F821 SHOW-
+A9 40    # F821        LDA #%01000000
+8D 00 80 # F823        STA $8000
+20 2C F8 # F826        JSR WAIT
+4C 00 F8 # F829        JMP MAIN
+         #
+         # F82C WAIT
+A2 00    # F82C        LDX #$00
+         # F82E WAIT1
+A0 00    # F82E        LDY #$00
+         # F830 WAIT2
+88       # F830        DEY
+EA       # F831        NOP
+EA       # F832        NOP
+EA       # F833        NOP
+EA       # F834        NOP
+D0 F9    # F835        BNE WAIT2
+CA       # F837        DEX
+D0 F4    # F838        BNE WAIT1
+60       # F83A        RTS
+
+echo line
+program 7FC 00 F8
+
+echo line
+r 000 40
+r 7F0 10
+
+echo line
+verify print
+
+@echo enable
