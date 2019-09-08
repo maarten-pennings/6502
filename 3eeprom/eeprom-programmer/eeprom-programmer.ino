@@ -8,14 +8,13 @@
 // - detect lost characters in uart transmission (how?)
 // - IO to control 2k or 8k chip
 // - command 'opt size <size> offset <offset>'
-
-// Allow 'read 56k 1p' with factors k for 1024 and p for 256
+// - allow 'read 56k 1p' with factors k for 1024 and p for 256
 
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "7"
-#define PROG_DATE    "2019 sep 7"
+#define PROG_VERSION "8"
+#define PROG_DATE    "2019 sep 8"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -140,8 +139,8 @@ void eeprom_init() {
 
   // On my board I have hooked red LEDs to Ax lines, and green LEDs to Dx lines; play start-up animation
   uint16_t addr=1;
-  while( addr<EEPROM_SIZE ) { eeprom_setaddr(addr); addr<<=1; delay(50); } 
-  while( addr>0 ) { eeprom_setaddr(addr); addr>>=1; delay(50); } 
+  while( addr<EEPROM_SIZE ) { eeprom_setaddr(addr); addr<<=1; delay(30); } 
+  while( addr>0 ) { eeprom_setaddr(addr); addr>>=1; delay(30); } 
 
   // The default mode is to show the data contents of the last used EEPROM address. 
   // So, on EEPROM, set Output Enable to "on" (low active)
@@ -390,12 +389,13 @@ const char cmd_program_longhelp[] PROGMEM =
 // The handler for the "verify" command
 char * s_clear = "clear";
 char * s_print = "print";
-uint32_t cmd_ms;
+uint32_t cmd_verify_ms;
+int cmd_verify_uartoverflow;
 void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   // verify clear
   if( argc==2 ) {
-    if( strstr(s_clear,argv[1])==s_clear) { cmd_ms= millis(); cmd_stream_errors=0; if( argv[0][0]!='@') Serial.println(F("verify: cleared")); }
-    else if( strstr(s_print,argv[1])==s_print) { Serial.print(F("verify: ")); Serial.print(cmd_stream_errors); Serial.print(F(" errors (")); Serial.print(millis()-cmd_ms);Serial.println(F("ms)"));}
+    if( strstr(s_clear,argv[1])==s_clear) { cmd_verify_ms= millis(); cmd_verify_uartoverflow=0; cmd_stream_errors=0; if( argv[0][0]!='@') Serial.println(F("verify: cleared")); }
+    else if( strstr(s_print,argv[1])==s_print) { Serial.print(F("verify: ")); Serial.print(cmd_stream_errors); Serial.print(F(" errors, ")); Serial.print(cmd_verify_uartoverflow); Serial.print(F(" uart overflows, ")); Serial.print(millis()-cmd_verify_ms);Serial.println(F(" ms"));}
     else Serial.println(F("ERROR: verify: expected <addr> <data>... or 'clear' or 'print'"));
   } else {
     cmd_main_write(desc,argc,argv);
@@ -410,9 +410,9 @@ const char cmd_verify_longhelp[] PROGMEM =
   "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode (see `write` command)\n"
   "SYNAX: verify print\n"
-  "- prints global error counter (and ms elapsed since last 'verify clear')\n"
+  "- prints global error counter, uart overflow counter and stopwatch\n"
   "SYNAX: [@]verify clear\n"
-  "- sets global error counter to 0\n"
+  "- sets global error counter, uart overflow counter, and stopwatch to 0\n"
   "- with @ present, no feedback is printed\n"
   "NOTE:\n"
   "- <addr> and <data> are in hex\n"
@@ -478,13 +478,14 @@ void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   Serial.println(F("info: eeprom : " PROG_EEPROM));
   Serial.print  (F("info: voltage: ")); Serial.print( mega328_Vcc() ); Serial.println(F("mV"));
   Serial.print  (F("info: cpufreq: ")); Serial.print( F_CPU ); Serial.println(F("Hz"));
+  Serial.print  (F("info: uartbuf: ")); Serial.print( SERIAL_RX_BUFFER_SIZE ); Serial.println(F(" bytes"));
 }
 
 const char cmd_info_longhelp[] PROGMEM = 
   "SYNAX: info\n"
   "- shows application information (name, author, version, date)\n"
   "- shows supported EEPROM(s)\n"
-  "- shows cpu info (cpu voltage, cpu speed)\n"
+  "- shows cpu info (cpu voltage, cpu speed, uart rx buf size)\n"
 ;
 
 // The handler for the "echo" command
@@ -714,6 +715,7 @@ int key_pressed( void ) {
 
 void setup() {
   Serial.begin(115200);
+  Serial.println();
   Serial.println(F("   _____  _____________________"));
   Serial.println(F("  /  _  \\ \\_   _____/\\______   \\"));
   Serial.println(F(" /  /_\\  \\ |    __)_  |     ___/"));
@@ -723,7 +725,7 @@ void setup() {
   Serial.println("");
   Serial.println(F(PROG_NAME " V" PROG_VERSION));
   Serial.println(F("Type 'help' for help"));
-  Serial.println("");
+  Serial.println();
   cmd_init();
   key_init();
   eeprom_init();
@@ -731,10 +733,17 @@ void setup() {
 
 void loop() {
   // Serial
+  int n=0;
   while(1) {
     int ch= Serial.read();
     if( ch==-1 ) break;
     cmd_add(ch);
+    if( ++n==SERIAL_RX_BUFFER_SIZE ) { 
+      cmd_verify_uartoverflow++; 
+      Serial.println(); 
+      Serial.println( F("WARNING: uart overflow") ); 
+      Serial.println(); 
+    }
   }
   // Keys
   key_scan();
