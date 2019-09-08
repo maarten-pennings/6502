@@ -29,7 +29,6 @@ CA       # F82E        DEX
 D0 F8    # F82F        BNE WAIT1
 60       # F831        RTS
 
-
 echo line
 program 7FC 00 F8
 
@@ -39,3 +38,5 @@ r 7F0 10
 
 echo line
 verify print
+
+@echo enable
