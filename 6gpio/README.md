@@ -95,6 +95,7 @@ And I hooked ϕ2 to ϕ2 of the 6502.
 
 On the photo, see the 6502 computer (crystal, EEPROM, RAM, segment decoder and even still 
 the 3 S/R latches with LEDS, and the 2 addres line LEDS), connected to the 7-segment driver.
+I made the OR with three NAND gates.
 
 ![7-segment board](7-segment.jpg)
 
