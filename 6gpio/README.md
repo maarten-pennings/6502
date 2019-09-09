@@ -15,7 +15,7 @@ In this chapter we look at various options for General Purpose Input and Output 
 One of the first things we did to get feedback from the 6502 is to hook up LEDs to address lines.
 We used two approaches.
 
-### 6.1.1. Address pins
+### 6.1.1. Monitor pins
 
 The first approach was just to monitor the address changes. 
 We used this during the [free run](../1clock#12-clock---oscillator).
@@ -108,7 +108,7 @@ Likewise, the bit patterns for `6`, `5`, `0`, `2` and `-` were constructed.
 
 The complete [script](7-segment.eeprom) adds a wait routine and loops back.
 
-```
+```asm
 LDA #%01111101
 STA $8000
 JSR WAIT
