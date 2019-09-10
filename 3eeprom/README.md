@@ -451,7 +451,7 @@ Next the Nano copies the shift flip-flops with one pulse on the STCP ("store clo
 This feature helps us a little bit: I have LEDs on the address lines, and they flicker during shifting.
 
 The other feature is the output stage. The 74194 has a buffer ("amplifier") that puts the output signal on the Q lines. 
-This is known as 2-state output (namely low or high). The 74595 can disable the buffer via the nOE line, makig the Q-line 
+This is known as 2-state output (namely low or high). The 74595 can disable the buffer via the nOE line, mankig the Q-line 
 high-impedance (the third state). This would allow the outputs of two shift registers be tied together as long as at
 most one is enabled. We do not use this feature in the EEPROM programmer.
 
@@ -462,7 +462,7 @@ The schematics of the new EEPROM programmer shows only a couple of minor improve
  - The current limiting resistors for the (address and data) LEDs are increased from 1k to 10k (the LEDs were too bright)
  - The current limiting resistors for the (address and data) LEDs are replaced
    by a [resistor array](https://www.aliexpress.com/item/32345035507.html) to save space
- - The two switches now have an 100nF capacitor parallel to the switch to mitigate debounce effects
+ - The two switches now have a 100nF capacitor parallel to the switch to mitigate debounce effects
  - I removed the two pull-ups for nOE and nWE - I believe the Nano ports are stronger anyhow
  
 ![EEPROM Programmer V2 schematics](eeprom-programmer-74595.png)
@@ -477,6 +477,7 @@ The software improvements are also small
  - Includes support for 74HC595 (but the 74164 still works).
  - Arduino EEPROM Programmer now polls the EEPROM for write to complete, instead of having a "long" time-out. 
  - The `verify` command now prints the write/programming time.
+ - The `verify` command now prints the number of UART overflows (if the PC sends "write"s too fast).
  - Added power-on LED animation, so that the user can see when the Nano is booted.
 
 The first point was surprisingly hard.
@@ -508,7 +509,7 @@ Adding support for the bigger EEPROM should be feasible; the figure below shows 
 
 ![AT28C16 vs AT28C64](AT28Cxx.png)
 
-Note that we problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
+Note that we have problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
 wiring VIN should not be a problem. For the A1/nWE we need a simple mux that we can make with one quad-NAND.
 
 To be continued...
