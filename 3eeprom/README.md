@@ -510,6 +510,6 @@ Adding support for the bigger EEPROM should be feasible; the figure below shows 
 ![AT28C16 vs AT28C64](AT28Cxx.png)
 
 Note that we have problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
-wiring VIN should not be a problem. For the A1/nWE we need a simple mux that we can make with one quad-NAND.
+wiring VIN should not be a problem. For the A11/nWE we need a simple mux - we can make one with a single quad-NAND.
 
 To be continued...
