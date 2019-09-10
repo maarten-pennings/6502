@@ -13,8 +13,8 @@
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
 #define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "8"
-#define PROG_DATE    "2019 sep 8"
+#define PROG_VERSION "8a"
+#define PROG_DATE    "2019 sep 10"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -140,7 +140,8 @@ void eeprom_init() {
   // On my board I have hooked red LEDs to Ax lines, and green LEDs to Dx lines; play start-up animation
   uint16_t addr=1;
   while( addr<EEPROM_SIZE ) { eeprom_setaddr(addr); addr<<=1; delay(30); } 
-  while( addr>0 ) { eeprom_setaddr(addr); addr>>=1; delay(30); } 
+  addr>>=1; 
+  while( addr>1 ) { addr>>=1; eeprom_setaddr(addr); delay(30); } 
 
   // The default mode is to show the data contents of the last used EEPROM address. 
   // So, on EEPROM, set Output Enable to "on" (low active)
