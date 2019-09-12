@@ -75,7 +75,7 @@ For me this project is about learning _hardware_, so my goal is to make a 7-segm
 ### 6.3.1. Concept
 
 The idea that I had was as follows: the activation signal from the address decoder, the chip select, could trigger a clock
-pulse of eight D-type flop-flops. If we connect the inputs of the flip flops to the 8 address lines, 
+pulse of eight D-type flop-flops. If we connect the inputs of the flip-flops to the 8 address lines, 
 then the output of the flip-flops can drive LEDs. 
 
 The cost here is one [octal D flip-flop](https://www.ti.com/lit/ds/symlink/sn54ls273-sp.pdf) IC per 7-segment display. 
@@ -135,6 +135,59 @@ JSR WAIT
 
 Power to the board, reset, and [enjoy](https://youtu.be/t_L_AEqfp-k).
 
+
+### 6.3.5. Timing analysis
+
+Timing wise, the circuit is not completely sound. 
+
+#### 6.3.5.1 Details
+
+Let's have a look at the details, which I captured with my logic analyser, a [Saleae](https://www.saleae.com).
+
+![Annotated trace](trace.png)
+
+- The first row `CPU-CLK` show the 6502 clock signal. At (1) a cycle starts; the diagram shows only one cycle.
+- The second row `PHI2` shows the ϕ2 as output by the 6502. Note that it is indeed a bit delayed with respect to the clock. 
+  Especially the falling edges (2a) and (2b) are delayed, for the rising edge we do not see a delay.
+- The third row `nSEG-SEL` is 8xxx output of the address decoder. Note that it goes low as soon as A12-A15 form 8.
+  We see that (3) is a bit later then (2a), which makes sense. Not only does our address decoder need some time,
+  also the 6502 itself outputs A0-A15 some time (tADS, see [timing diagran](.../4ram/README.md#413-6502-read))
+  after ϕ2 goes low. (3) is an important moment: the address decoder notices that the 7-sgement will be written.
+- Again, completely following the [spec](../4ram/README.md#414-6502-write), the data line on row 5 becomes 
+  valid (4) just after ϕ2 goes high. Also (4) is important, this is the data that needs to go to the segment.
+- Row 4 `SEG-CLK` shows the clock signal fed to the D flip flops; we made this signal as an OR from
+  `PHI2` and `nSEG-SEL`. The red up arrow shows the rising edge that cause the flip-flops to clock-in.
+- At the moment the `SEG-CLK` goes high (red arrow), the data is high (green circle), which causes the flip-flop to
+  "flip" its output to high (green arrow).
+- Note, at the end of the clock, the address as well as the data lines (5a) and (5b) "reset" (change for the next instruction).
+- Our OR causes a problem: the `SEG-CLK` signal has an extra bump (6). How big is that problem?
+
+#### 6.3.5.2. Timing OK
+
+The trace below suggests. The `SEG-CLK` goes up twice. The first time the data is still old, but the second time (blue box)
+the data is (as specified by the 6502 timing diagram) correct, and clocked in.
+
+![Annotated trace](trace-ok.png)
+
+#### 6.3.5.3. Timing early
+
+The trace below shows a case where the first rising edge (first red arrow) already clocks in the data.
+The second rising edge clocks (blue box) in the correct data, in this case the same.
+
+![Annotated trace](trace-early.png)
+
+#### 6.3.5.4. Timing correction
+
+The trace below shows that the early clock-in, is not always the correct data.
+The second clock-in does take the correct data, but there is a 0.4us flicker on the display.
+
+![Annotated trace](trace-correct.png)
+
+#### 6.3.5.5. Timing conclusion
+
+All observed cases clock-in the correct data, but sometimes this is preceeded by an incorrect one.
+This seems acceptable.
+  
 
 ## 6.4. VIA
 The first peripheral we add is the VIA, or 
