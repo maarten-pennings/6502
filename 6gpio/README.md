@@ -93,6 +93,8 @@ And I hooked ϕ2 to ϕ2 of the 6502.
 
 > I must say that I'm still a bit puzzled by the OR construction: it generates a falling edge on CP when ϕ2 falls, and the segment driver is selected (nCS is low). However the datasheet of the 74273 says the latching happens on rising edge of CP. So why is the inverter not needed?
 
+> Found an error (OR should maybe be NOR), read on...
+
 On the photo, see the 6502 computer (crystal, EEPROM, RAM, segment decoder and even still 
 the 3 S/R latches with LEDS, and the 2 addres line LEDS), connected to the 7-segment driver.
 I made the OR with three NAND gates.
@@ -168,30 +170,46 @@ Let's have a look at the details, which I captured with my logic analyser, a [Sa
 The trace below shows the `SEG-CLK` goes up twice. The first time the data is still old, but the second time (blue box)
 the data is (as specified by the 6502 timing diagram) correct, and clocked in.
 
-![Annotated trace](trace-ok.png)
+![Annotated trace "ok"](trace-ok.png)
 
 #### 6.3.5.3. Timing early
 
 The trace below shows a case where the first rising edge (first red arrow) already clocks in the data.
 The second rising edge clocks-in the correct data (blue box), in this case the data is the same.
 
-![Annotated trace](trace-early.png)
+![Annotated trace "early"](trace-early.png)
 
 #### 6.3.5.4. Timing correction
 
 The trace below shows that the early clock-in, is not always the correct data.
 The second clock-in does take the correct data, but there is a 0.4us flicker on the display.
 
-![Annotated trace](trace-correct.png)
+![Annotated trace "correct"](trace-correct.png)
 
-#### 6.3.5.5. Timing conclusion
+#### 6.3.5.5. Fixing an error
+
+I suddenly realized that the OR is **wrong**.
+When the `nSEG-SEL` is low (meaning the segment is selected by the address decoder) and the `PHI2` goes low, the `SEG-CLK` goes low,
+because it is OR'ed. But it should go high, so we need a NOR. Why is the circuit working? I added the NOT after the OR, and 
+captured timing with the logic analyser.
+
+![Annotated trace "nor"](trace-nor.png)
+
+Please be aware that my logic analyser has a capture speed of 25MS/s or 40ns per sample. On row 4 we see a small dip of 41.67ns,
+which is in the order of the capture resolution of my device.
+
+Anyhow, row 6 `nSEG-CLK` is now the NOT signal of the `SEG-CLK` we used previously.
+What we see is that the rising edge (given the accuracy of my logic analyzer) comes around the same moment - and the 
+falling edges are ignored. That's why the both circuits (with and without NOT) work.
+
+#### 6.3.5.6. Timing conclusion
 
 All observed cases clock-in the correct data, but sometimes this is preceeded by an incorrect one.
-This seems acceptable.
+This seems acceptable. However, I do not like the extra dip, so I think the circuit needs to be clocked.
   
 
 ## 6.4. VIA
-The first peripheral we add is the VIA, or 
+The next peripheral we try is the VIA, or 
 [Versatile Interface Adapter](http://archive.6502.org/datasheets/mos_6522_preliminary_nov_1977.pdf).
 This is a chip that implements two 8-bit GPIO ports, has timers and interrupts.
 
