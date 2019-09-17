@@ -475,6 +475,7 @@ The new board looks like this
 
 The software improvements are also small
  - Includes support for 74HC595 (but the 74164 still works).
+ - The UART (over USB) is checked for overflows (when the PC sends data too fast) which could cause missing bytes to write
  - Arduino EEPROM Programmer now polls the EEPROM for write to complete, instead of having a "long" time-out. 
  - The `verify` command now prints the write/programming time.
  - The `verify` command now prints the number of UART overflows (if the PC sends "write"s too fast).
