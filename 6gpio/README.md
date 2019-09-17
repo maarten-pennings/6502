@@ -157,8 +157,8 @@ Let's have a look at the details, which I captured with my logic analyser, a [Sa
   valid (4) just after ϕ2 goes high. Also (4) is important, this is the data that needs to go to the 7-segment display.
 - Row 4 `SEG-CLK` shows the clock signal fed to the D flip-flops; we made this signal as an OR from
   `PHI2` and `nSEG-SEL`. The red up arrow shows the rising edge that causes the flip-flops to clock-in.
-- At the moment the `SEG-CLK` goes high (red arrow), the data is high (green circle), which causes the flip-flop to
-  "flip" its output to high (green arrow).
+- At the moment the `SEG-CLK` goes high (red arrow), the data (for "segment a" `D-A` on row 5) is high (green circle), 
+  which causes the flip-flop to "flip" its output to high (green arrow on row 6 `SEG-A` showing the line to segment a).
 - Note, at the end of the clock, the address lines (5a) as well as the data lines (5b) "reset" (change for the next instruction).
 - Our OR causes a problem: the `SEG-CLK` signal gets an extra bump (6). So we have two rising edges per clock.
   How big is that problem?
