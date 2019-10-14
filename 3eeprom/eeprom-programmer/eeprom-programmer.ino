@@ -1,25 +1,22 @@
-// Arduino EEPROM Programmer (for the AT28C16)
+// Arduino EEPROM Programmer (for the AT28C16 and AT28C64)
 // Features a complete command interpreter
 //   See https://github.com/maarten-pennings/6502/tree/master/3eeprom
 
 
 // Todo:
-// - Add shift registers with latches so that we don't see the LEDs flicker
-// - detect lost characters in uart transmission (how?)
-// - IO to control 2k or 8k chip
 // - command 'opt size <size> offset <offset>'
-// - allow 'read 56k 1p' with factors k for 1024 and p for 256
+// - when sel pressed: flash nibble of address bits
+
 
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
-#define PROG_EEPROM  "AT28C16 2k*8b"
-#define PROG_VERSION "8a"
-#define PROG_DATE    "2019 sep 10"
+#define PROG_VERSION "10"
+#define PROG_DATE    "2019 oct 15"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
-// Voltage ==============================================================
-// Get own VCC the Arduino Nano runs on
+// Mega328 ==============================================================
+// Get the VCC the Arduino Nano itself runs on (using built-in ref)
 // Since is also powers the EEPROM, this should not be too low
 
 long mega328_readVcc(void) { 
@@ -45,10 +42,7 @@ long mega328_Vcc(void) {
 
 
 // EEPROM ===============================================================
-// Driver for the eeprom
-
-// Number of bytes (actually address locations) in EEPROM
-#define EEPROM_SIZE 0x800
+// Driver for the eeprom (and the shift registers and the MUX)
 
 // This sketch supports two types of shift ICs: 74HTC164 and 74HC595 (the latter has less flicker).
 // 74HTC164 (two ICs: Q7 of the first is chained to DSA and DSB of the second)
@@ -57,9 +51,9 @@ long mega328_Vcc(void) {
 //   MR to VCC
 // 74HC595 (two ICs: Q7S of the first is chained to DS of the second)
 //   The 74HC595's are controlled by the Nane: EEPROM_PIN_DATA to DS, EEPROM_PIN_CLK to SHCP, EEPROM_PIN_LATCH to STCP
-//   The Q0-Q7 (1st IC) and the Q0-Q2 (2n IC) control A0-A10 of the EEPROM
+//   The Q0-Q7 (1st IC) and the Q0-Q2 (2nd IC) control A0-A10 of the EEPROM.
 //   nOE is tied to GND, nMR is tied to VCC
-// Note that the 74HC595 had one extra control line EEPROM_PIN_LATCH which, when strobed, latches all values.
+// Note that the 74HC595 has one extra control line EEPROM_PIN_LATCH which, when strobed, latches all values.
 
 // These Nano pins control the data pins of the EEPROM
 #define EEPROM_PIN_D0     2
@@ -76,13 +70,74 @@ long mega328_Vcc(void) {
 // These Nano pins control the shift registers
 #define EEPROM_PIN_DATA  12
 #define EEPROM_PIN_CLK   13
-#define EEPROM_PIN_LATCH A0
+#define EEPROM_PIN_LATCH A0 // comment out when using 74HTC164 (or leave it defined: nothing will happen since pin EEPROM_PIN_LATCH is unconnected, and 164 outputs without latch pulse)
+#define EEPROM_PIN_CE    A2
+// These Nano pins control the MUX
+#define EEPROM_PIN_16n64 A1
 
-// Undefine next macro when using 74HTC164 
-// But you could leave it defined: nothing will happen since pin EEPROM_PIN_LATCH is unconnected.
-//#undef EEPROM_PIN_LATCH 
+// This sketch supports two types of EEPROMS: 28C16 (2kB) and 28C64 (8kB).
+// All pins of the 28C16 have identical function on the 28C64 (when the GND pins are aligned), 
+// with two exceptions (boxed in the diagram below):
+//                 +---+       +---+
+//           28  27| 26| 25  24| 23| 22  21  20  19  18  17  16  15
+//   28C64: VIN nWE| NC| A8  A9|A11|nOE A10 nCE  D7  D6  D5  D4  D3
+//   28C16:        |VIN| A8  A9|nWE|nOE A10 nCE  D7  D6  D5  D4  D3
+//                 +---+       +---+
+//   28C16:          A7  A6  A%  A4  A3  A2  A1  A0  D0  D1  D2 GND
+//   28C64: RDY A12  A7  A6  A%  A4  A3  A2  A1  A0  D0  D1  D2 GND
+//           1   2   3   4   5   6   7   8   9   10  11  12  13  14 
+//
+// Since on the 28C64, pin 26 is 'Not Connected' it doesn't harm to put VIN there.
+// Of course, we have VIN on 28, nWE on 27 and A12 on 2 (and we let output pin 1 dangle). 
+// This does not impact 28C16.
+// The biggest problem is pin 23. For 28C16 this needs to be nWE and for 28C64 this needs to be A11.
+// Therefore, we have a MUX, controlled by EEPROM_PIN_16n64 to select between the two functions.
+// The I0 of the MUX is connected to A11, the I1 of the MUX to nWE; Q to pin 23 of the EEPROM.
+// This means that a 0 on EEPROM_PIN_16n64 selects A11 (28C64) and a 1 selects nWE (28C16).
 
+// Implementation detail: represent eeprom type with its size
+#define EEPROM_TYPE_NONE  0x0000U
+#define EEPROM_TYPE_28C16 0x0800U
+#define EEPROM_TYPE_28C64 0x2000U
 
+unsigned int eeprom_type;
+
+// Sets the eeprom type to `type` (which should be either EEPROM_TYPE_28C16 or EEPROM_TYPE_28C64)
+void eeprom_type_set( int type ) {
+  if( type==EEPROM_TYPE_28C16 ) {
+    // On MUX, select 28C16, i.e. nWE 
+    digitalWrite(EEPROM_PIN_16n64,HIGH); 
+    eeprom_type= type;
+  } else if( type==EEPROM_TYPE_28C64 ) {
+    // On MUX, select 28C64, i.e. A11 
+    digitalWrite(EEPROM_PIN_16n64,LOW ); 
+    eeprom_type= type;
+  } else {
+    Serial.println(F("ERROR: unknown type"));
+  }
+}
+
+// Returns the eeprom type (either EEPROM_TYPE_28C16 or EEPROM_TYPE_28C64)
+unsigned int eeprom_type_get( void ) {
+  return eeprom_type;
+}
+
+// Returns number of bytes (actually address locations) in EEPROM
+unsigned int eeprom_size( void ) {
+  return eeprom_type; // EEPROM type is coded as size
+}
+
+#define EEPROM_CE_NONE    -1
+#define EEPROM_CE_ENABLE  LOW
+#define EEPROM_CE_DISABLE HIGH
+void eeprom_ce_set(int ce) {
+  digitalWrite(EEPROM_PIN_CE, ce );
+}
+
+int eeprom_ce_get(void) {
+  return digitalRead(EEPROM_PIN_CE);  
+}
+  
 // Set all Nano data pins to `input`
 void eeprom_input( bool input ) {
   if( input ) {
@@ -124,22 +179,29 @@ void eeprom_init() {
   digitalWrite(EEPROM_PIN_nOE  ,HIGH); // On EEPROM, set Output Enable to "off" (low active)
   digitalWrite(EEPROM_PIN_DATA ,LOW ); // On Shift IC, set data low (not so important)
   digitalWrite(EEPROM_PIN_CLK  ,LOW ); // On Shift IC, set clock low (rising edge later will clock-in data)
+  digitalWrite(EEPROM_PIN_CE   ,HIGH); // On EEPROM, set CE to "off" (low active)
   #ifdef EEPROM_PIN_LATCH
   digitalWrite(EEPROM_PIN_LATCH,LOW ); // On Shift IC, set latch low (rising edge later will latch data)
   #endif
+  digitalWrite(EEPROM_PIN_16n64,HIGH); // On MUX, select 28C16, i.e. nWE (low would be A11 for 28C64)
   
-  // Set all control pins as output
+  // Give all output pins the mode output
   pinMode(EEPROM_PIN_nWE  , OUTPUT);
   pinMode(EEPROM_PIN_nOE  , OUTPUT);
   pinMode(EEPROM_PIN_DATA , OUTPUT);
   pinMode(EEPROM_PIN_CLK  , OUTPUT);
+  pinMode(EEPROM_PIN_CE   , OUTPUT);
   #ifdef EEPROM_PIN_LATCH
   pinMode(EEPROM_PIN_LATCH, OUTPUT);
   #endif
+  pinMode(EEPROM_PIN_16n64, OUTPUT);
 
+  // Select type
+  eeprom_type_set(0x0800U);
+  
   // On my board I have hooked red LEDs to Ax lines, and green LEDs to Dx lines; play start-up animation
   uint16_t addr=1;
-  while( addr<EEPROM_SIZE ) { eeprom_setaddr(addr); addr<<=1; delay(30); } 
+  while( addr<EEPROM_TYPE_28C64 ) { eeprom_setaddr(addr); addr<<=1; delay(30); } 
   addr>>=1; 
   while( addr>1 ) { addr>>=1; eeprom_setaddr(addr); delay(30); } 
 
@@ -207,10 +269,12 @@ void eeprom_write(uint16_t addr, uint8_t data ) {
   eeprom_input(true);
   digitalWrite(EEPROM_PIN_nOE,LOW);
   // Check write completed 
-  //   Out of the 5 chips I have, for 4 the D7 inversion is not working.
-  //   The EEPROM simply returns 00 for D0-F7 until write cycle is completed and the real data appears.
-  //   The 1 good EEPROM returns random bits (but MSB inversed) for D0-F7 until write cycle is completed and the real data appears.
-  //   So, I poll for the correct 8 bits to appear. Unfortunately, this does not work when writing 00.
+#if 1
+  delayMicroseconds(10*1000); // timeout of 10ms as in https://youtu.be/K88pgWhEb1M?t=3130
+#else
+  // Out of the 5 chips I have, for 4 the D7 inversion is not working.
+  // For a while, I thought that when read-back gives the written data the cycle would be complete.
+  // But even that is not true...
   //Serial.print("[");
   uint32_t t1, t0=micros();
   while( 1 ) {
@@ -223,6 +287,7 @@ void eeprom_write(uint16_t addr, uint8_t data ) {
   }
   //Serial.print(t1-t0);
   //Serial.println("us]");
+#endif  
 }
 
 
@@ -309,7 +374,7 @@ void cmd_write_verify_prog(int argc, char * argv[] ) {
       if( cmd_stream_mode=='>' ) { cmd_stream_mode=cmd_stream_desc->name[0]; Serial.print(F(" (*")); } else { Serial.print(F(" *)")); cmd_stream_mode='>'; }
       continue; 
     }
-    if( cmd_stream_addr>=EEPROM_SIZE ) { Serial.println(); Serial.print(F("ERROR: ")); Serial.print(cmd_stream_desc->name ); Serial.println(F(": <addr> out of range")); return; }
+    if( cmd_stream_addr>=eeprom_size() ) { Serial.println(); Serial.print(F("ERROR: ")); Serial.print(cmd_stream_desc->name ); Serial.println(F(": <addr> out of range")); return; }
     uint16_t data1;
     if( !cmd_parse(arg,&data1) ) { Serial.println(); Serial.print(F("ERROR: ")); Serial.print(cmd_stream_desc->name ); Serial.println(F(": <data> must be hex")); return; }
     if( data1>=256 ) { Serial.println(); Serial.print(F("ERROR: ")); Serial.print(cmd_stream_desc->name ); Serial.println(F(": <data> must be 00..FF")); return; }
@@ -329,17 +394,18 @@ void cmd_write_verify_prog(int argc, char * argv[] ) {
 
 // The handler for the "read" command
 void cmd_main_read( struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
   // read [ <addr> [ <num> ] ]
-  if( argc==1 ) { cmd_read(0x000, EEPROM_SIZE); return; }
+  if( argc==1 ) { cmd_read(0x000, eeprom_size()); return; }
   // Parse addr
   uint16_t addr;
   if( !cmd_parse(argv[1],&addr) ) { Serial.println(F("ERROR: read: <addr> must be hex")); return; }
-  if( addr>=EEPROM_SIZE ) { Serial.println(F("ERROR: read <addr>: <addr> out of range")); return; }
+  if( addr>=eeprom_size() ) { Serial.println(F("ERROR: read <addr>: <addr> out of range")); return; }
   if( argc==2 ) { cmd_read(addr,1); return; }
   // Parse num
   uint16_t num;
   if( !cmd_parse(argv[2],&num) ) { Serial.println(F("ERROR: read: <num> must be hex")); return; }
-  if( addr+num>EEPROM_SIZE ) { Serial.println(F("ERROR: read: <addr>+<num> out of range")); return; }
+  if( addr+num>eeprom_size() ) { Serial.println(F("ERROR: read: <addr>+<num> out of range")); return; }
   if( argc==3 ) { cmd_read(addr,num); return; }
   Serial.println(F("ERROR: read: too many arguments"));
 }
@@ -355,11 +421,12 @@ const char cmd_read_longhelp[] PROGMEM =
   
 // The handler for the "write" command, but also for "verify" and "program"
 void cmd_main_write(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
   if( argc<3 ) { Serial.print(F("ERROR: ")); Serial.print(desc->name ); Serial.println(F(": expected <addr> <data>...")); return; }
   // Parse addr
   uint16_t addr;
   if( !cmd_parse(argv[1],&addr) ) { Serial.println(F("ERROR: write/verify : <addr> must be hex")); return; }
-  if( addr>=EEPROM_SIZE ) { Serial.print(F("ERROR: ")); Serial.print(desc->name ); Serial.println(F(": <addr> out of range")); return; }
+  if( addr>=eeprom_size() ) { Serial.print(F("ERROR: ")); Serial.print(desc->name ); Serial.println(F(": <addr> out of range")); return; }
   // Write data('s)
   cmd_stream_addr= addr;
   cmd_stream_desc= desc;
@@ -393,6 +460,7 @@ char * s_print = "print";
 uint32_t cmd_verify_ms;
 int cmd_verify_uartoverflow;
 void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
   // verify clear
   if( argc==2 ) {
     if( strstr(s_clear,argv[1])==s_clear) { cmd_verify_ms= millis(); cmd_verify_uartoverflow=0; cmd_stream_errors=0; if( argv[0][0]!='@') Serial.println(F("verify: cleared")); }
@@ -419,8 +487,12 @@ const char cmd_verify_longhelp[] PROGMEM =
   "- <addr> and <data> are in hex\n"
 ;
 
-// helper for cmd_main_erase() to erase part of EEPROM
-void cmd_erase(uint16_t addr, uint16_t num, uint8_t data ) {
+// Helper for cmd_main_erase() to erase part of EEPROM
+// Erases the memory by writing <num> bytes starting from <addr>.
+// The written value is <data>, but it is stepped by one every <step> addresses.
+// Note that a "big" value for <step> disables stepping (and 0 is the biggest value, since there is pre-increment)
+void cmd_erase(uint16_t addr, uint16_t num, uint8_t data, uint16_t step ) {
+  uint16_t count=0;
   char buf[8];
   for(uint16_t base= addr; base<addr+num; base+=CMD_BYTESPERLINE ) {
     snprintf(buf,sizeof(buf),"%03x:",base); Serial.print(buf);
@@ -430,6 +502,8 @@ void cmd_erase(uint16_t addr, uint16_t num, uint8_t data ) {
       uint8_t data2= eeprom_read(a);
       snprintf(buf,sizeof(buf)," %02x",data); Serial.print(buf);
       if( data!=data2 ) { snprintf(buf,sizeof(buf),"~%02x",data2); Serial.print(buf); cmd_stream_errors++; }
+      count++;
+      if( count==step ) { data+=1; /*might wrap*/ count=0; }
     }
     Serial.println("");
   }
@@ -437,30 +511,36 @@ void cmd_erase(uint16_t addr, uint16_t num, uint8_t data ) {
 
 // The handler for the "erase" command
 void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
-  // erase [ <addr> [ <num> [ <data> ] ] ]
-  if( argc==1 ) { cmd_erase(0x000, EEPROM_SIZE, 0xFF); return; }
+  if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
+  // erase [ <addr> [ <num> [ <data> [ <step> ] ] ] ]
+  if( argc==1 ) { cmd_erase(0x000, eeprom_size(), 0xFF, 0); return; }
   // Parse addr
   uint16_t addr;
   if( !cmd_parse(argv[1],&addr) ) { Serial.println(F("ERROR: erase: <addr> must be hex")); return; }
-  if( addr>=EEPROM_SIZE ) { Serial.println(F("ERROR: erase <addr>: <addr> out of range")); return; }
-  if( addr+0x100>EEPROM_SIZE )  { Serial.println(F("ERROR: erase: <addr>+100 out of range")); return; }
-  if( argc==2 ) { cmd_erase(addr,0x100,0xFF); return; }
+  if( addr>=eeprom_size() ) { Serial.println(F("ERROR: erase <addr>: <addr> out of range")); return; }
+  if( addr+0x100>eeprom_size() )  { Serial.println(F("ERROR: erase: <addr>+100 out of range")); return; }
+  if( argc==2 ) { cmd_erase(addr,0x100,0xFF,0); return; }
   // Parse num
   uint16_t num;
   if( !cmd_parse(argv[2],&num) ) { Serial.println(F("ERROR: erase: <num> must be hex")); return; }
-  if( addr+num>EEPROM_SIZE ) { Serial.println(F("ERROR: erase: <addr>+<num> out of range")); return; }
-  if( argc==3 ) { cmd_erase(addr,num,0xFF); return; }
+  if( addr+num>eeprom_size() ) { Serial.println(F("ERROR: erase: <addr>+<num> out of range")); return; }
+  if( argc==3 ) { cmd_erase(addr,num,0xFF,0); return; }
   // Parse data
   uint16_t data;
   if( !cmd_parse(argv[3],&data) ) { Serial.println(F("ERROR: erase: <data> must be hex")); return; }
   if( data>=256 ) { Serial.print(F("ERROR: erase: <data> must be 00..FF")); return; }
-  if( argc==4 ) { cmd_erase(addr,num,data); return; }
+  if( argc==4 ) { cmd_erase(addr,num,data,0); return; }
+  uint16_t step;
+  if( !cmd_parse(argv[4],&step) ) { Serial.println(F("ERROR: erase: <step> must be hex")); return; }
+  if( argc==5 ) { cmd_erase(addr,num,data,step); return; }
   Serial.println(F("ERROR: erase: too many arguments"));
 }
 
 const char cmd_erase_longhelp[] PROGMEM = 
-  "SYNAX: erase [ <addr> [ <num> [ <data> ] ] ]\n"
+  "SYNAX: erase [ <addr> [ <num> [ <data> [ <step> ]] ] ]\n"
   "- erase <num> bytes in EEPROM, starting at location <addr>, by writing <data>\n"
+  "- <data> it is stepped by one every <step> addresses.\n"
+  "- when <step> is absent, <data> is never stepped\n"
   "- when <data> is absent, erase by writing 1's (<data>=FF)\n"
   "- when <num> is absent, erase one page (<num>=100)\n"
   "- when <addr> is absent, erase entire EEPROM\n"
@@ -476,7 +556,6 @@ void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   Serial.println(F("info: author : " PROG_AUTHOR));
   Serial.println(F("info: version: " PROG_VERSION));
   Serial.println(F("info: date   : " PROG_DATE));
-  Serial.println(F("info: eeprom : " PROG_EEPROM));
   Serial.print  (F("info: voltage: ")); Serial.print( mega328_Vcc() ); Serial.println(F("mV"));
   Serial.print  (F("info: cpufreq: ")); Serial.print( F_CPU ); Serial.println(F("Hz"));
   Serial.print  (F("info: uartbuf: ")); Serial.print( SERIAL_RX_BUFFER_SIZE ); Serial.println(F(" bytes"));
@@ -491,7 +570,7 @@ const char cmd_info_longhelp[] PROGMEM =
 
 // The handler for the "echo" command
 extern bool cmd_echo;
-void cmd_echo_print() { Serial.print("echo: "); Serial.println(cmd_echo?"enabled":"disabled"); }
+void cmd_echo_print() { Serial.print(F("echo: ")); Serial.println(cmd_echo?F("enabled"):F("disabled")); }
 char * s_enable = "enable";
 char * s_disable = "disable";
 char * s_line = "line";
@@ -540,7 +619,7 @@ const char cmd_echo_longhelp[] PROGMEM =
 extern struct cmd_desc_s cmd_descs[];
 void cmd_main_help(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   if( argc==1 ) {
-    Serial.println("Available commands");
+    Serial.println(F("Available commands"));
     for( struct cmd_desc_s * d= cmd_descs; d->name!=0; d++ ) {
       char buf[80];
       snprintf(buf,sizeof(buf)," %s - %s", d->name, d->shorthelp );
@@ -549,14 +628,14 @@ void cmd_main_help(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   } else if( argc==2 ) {
     struct cmd_desc_s * d= cmd_find(argv[1]);
     if( d==0 ) {
-      Serial.println("ERROR: help: command not found (try 'help')");    
+      Serial.println(F("ERROR: help: command not found (try 'help')"));    
     } else {
       // longhelp is in PROGMEM so we need to get the chars one by one...
       for(int i=0; i<strlen_P(d->longhelp); i++) 
         Serial.print((char)pgm_read_byte_near(d->longhelp+i));
     }
   } else {
-    Serial.println("ERROR: help: too many arguments");
+    Serial.println(F("ERROR: help: too many arguments"));
   }
 }
 
@@ -570,17 +649,86 @@ const char cmd_help_longhelp[] PROGMEM =
   "- sub commands may be shortened, for example 'verify clear' to 'verify c'\n"
   "- normal promp is >>, other prompt indicates streaming mode (see write)\n"
 ;
-  
+
+// The handler for the "options" command
+void cmd_options_print() { 
+  int mux=digitalRead(EEPROM_PIN_16n64); 
+  Serial.print(F("options: type: ")); Serial.print( mux?F("28c16 (2k*8b = "):F("28c64 (8k*8b = ") ); Serial.print( eeprom_size(),HEX ); Serial.println( F("B) ") ); 
+  Serial.print(F("options: chip: ")); Serial.println( digitalRead(EEPROM_PIN_CE)==LOW?F("enabled"):F("disabled")); 
+}
+char * s_type = "type";
+char * s_chip = "chip";
+char * s_28c16 = "28c16";
+char * s_28c64 = "28c64";
+void cmd_main_options(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  if( argc==1 ) {
+    cmd_options_print();
+    return;
+  }
+  int opt_type= EEPROM_TYPE_NONE;
+  int opt_ce= EEPROM_CE_NONE;
+  int argix= 1;
+  while( argix<argc ) {
+    Serial.print(argix);
+    if( strstr(s_type,argv[argix])==s_type ) {
+      // There is a 'type' subcommand. Was there already one?
+      if( opt_type!=EEPROM_TYPE_NONE ) { Serial.println(F("ERROR: options: 'type' already passed")); return; }
+      // Does it have a value
+      argix++;    
+      if( argix==argc ) { Serial.println(F("ERROR: options: 'type' needs value")); return; }
+      // Is the value acceptable
+      if( strstr(s_28c16,argv[argix])==s_28c16 ) { 
+        opt_type= EEPROM_TYPE_28C16;
+      } else if( strstr(s_28c64,argv[argix])==s_28c64 ) {
+        opt_type= EEPROM_TYPE_28C64;
+      } else {
+        Serial.println(F("ERROR: options: 'type' needs '28c16' or '28c64'")); return;
+      }
+      argix++;    
+    } else if( strstr(s_chip,argv[argix])==s_chip ) {
+      // There is a 'ce' subcommand. Was there already one?
+      if( opt_ce!=EEPROM_CE_NONE ) { Serial.println(F("ERROR: options: 'chip' already passed")); return; }
+      // Does it have a value
+      argix++;    
+      if( argix==argc ) { Serial.println(F("ERROR: options: 'chip' needs value")); return; }
+      // Is the value acceptable
+      if( strstr(s_enable,argv[argix])==s_enable ) { 
+        opt_ce= EEPROM_CE_ENABLE;
+      } else if( strstr(s_disable,argv[argix])==s_disable ) {
+        opt_ce= EEPROM_CE_DISABLE;
+      } else {
+        Serial.println(F("ERROR: options: 'chip' needs 'enable' or 'disable'")); return;
+      }
+      argix++;    
+    } else { 
+      Serial.println(F("ERROR: options: expected 'type' or 'chip'")); return; 
+    }
+  }
+  // Now activate the options (chip enable as last)
+  if( opt_type!=EEPROM_TYPE_NONE ) eeprom_type_set(opt_type);
+  if( opt_ce!=EEPROM_CE_NONE ) eeprom_ce_set(opt_ce);
+  // feedback
+  cmd_options_print();
+}
+
+const char cmd_options_longhelp[] PROGMEM = 
+  "SYNAX: options ( type|chip <val> )*\n"
+  "- without arguments, shows configured options\n"
+  "- type 28c16|28c64: configures programmer for EEPROM type\n"
+  "- chip enable|disable: configures chip-enable line of EEPROM\n"
+;
+
 // All command descriptors
 struct cmd_desc_s cmd_descs[] = {
-  { cmd_main_help  , "help", "gives help (try 'help help')", cmd_help_longhelp },
-  { cmd_main_info  , "info", "application info", cmd_info_longhelp },
-  { cmd_main_echo  , "echo", "echo a message (or en/disables echoing)", cmd_echo_longhelp },
-  { cmd_main_read  , "read", "read EEPROM memory", cmd_read_longhelp },
-  { cmd_main_write , "write", "write EEPROM memory", cmd_write_longhelp },
-  { cmd_main_verify, "verify", "verify EEPROM memory", cmd_verify_longhelp },
-  { cmd_main_write , "program", "write and verify EEPROM memory", cmd_program_longhelp },
-  { cmd_main_erase , "erase", "erases EEPROM memory", cmd_erase_longhelp },
+  { cmd_main_help   , "help"   , "gives help (try 'help help')", cmd_help_longhelp },
+  { cmd_main_info   , "info"   , "application info", cmd_info_longhelp },
+  { cmd_main_echo   , "echo"   , "echo a message (or en/disables echoing)", cmd_echo_longhelp },
+  { cmd_main_read   , "read"   , "read EEPROM memory", cmd_read_longhelp },
+  { cmd_main_write  , "write"  , "write EEPROM memory", cmd_write_longhelp },
+  { cmd_main_verify , "verify" , "verify EEPROM memory", cmd_verify_longhelp },
+  { cmd_main_write  , "program", "write and verify EEPROM memory", cmd_program_longhelp },
+  { cmd_main_erase  , "erase"  , "erases EEPROM memory", cmd_erase_longhelp },
+  { cmd_main_options, "options", "select options for the programmer", cmd_options_longhelp },
   { 0,0,0,0 }
 };
 
@@ -599,7 +747,7 @@ void cmd_prompt() {
     snprintf(buf,sizeof(buf),"%03x",  cmd_stream_addr );
     Serial.print( buf );
   }
-  Serial.print("> ");
+  Serial.print(F("> "));
 }
 
 // Initializes the command interpreter
@@ -649,7 +797,7 @@ void cmd_exec() {
     d->main(d, argc, argv ); // Execute handler of command
     return;
   } 
-  Serial.println("Error: command not found (try help)"); 
+  Serial.println(F("Error: command not found (try help)")); 
 }
 
 // Receiving characters via Serial (and update the statemachine)
@@ -662,7 +810,7 @@ void cmd_add(int ch) {
     if( cmd_echo ) cmd_prompt();
   } else if( ch=='\b' ) {
     if( cmd_ix>0 ) {
-      if( cmd_echo ) Serial.print("\b \b");
+      if( cmd_echo ) Serial.print(F("\b \b"));
       cmd_ix--;
     } else {
       // backspace with no more chars in buf; ignore
@@ -679,35 +827,39 @@ void cmd_add(int ch) {
 }
 
 
-// Keyboard =============================================================
+// Buttons =============================================================
 
 // Pins for the keys
-#define KEY_UP_PIN A5
-#define KEY_DN_PIN A4
+#define BUT_PIN_PLS  A5
+#define BUT_PIN_MIN  A4
+#define BUT_PIN_SEL  A3
 
 // Code for the keys
-#define KEY_UP 1
-#define KEY_DN 2
+#define BUT_PLS  1
+#define BUT_MIN  2
+#define BUT_SEL  4
 
-int key_prv;
-int key_cur;
+int but_prv;
+int but_cur;
 
-void key_init( void ) {
-  pinMode(KEY_UP_PIN, INPUT);
-  pinMode(KEY_DN_PIN, INPUT);
-  key_scan();
-  key_scan();
+void but_init( void ) {
+  pinMode(BUT_PIN_PLS, INPUT);
+  pinMode(BUT_PIN_MIN, INPUT);
+  pinMode(BUT_PIN_SEL, INPUT);
+  but_scan();
+  but_scan();
 }
 
-void key_scan( void ) {
-  key_prv= key_cur;
-  key_cur= 0;
-  if( digitalRead(KEY_UP_PIN) ) key_cur|= KEY_UP;
-  if( digitalRead(KEY_DN_PIN) ) key_cur|= KEY_DN;
+void but_scan( void ) {
+  but_prv= but_cur;
+  but_cur= 0;
+  if( digitalRead(BUT_PIN_PLS) ) but_cur|= BUT_PLS;
+  if( digitalRead(BUT_PIN_MIN) ) but_cur|= BUT_MIN;
+  if( digitalRead(BUT_PIN_SEL) ) but_cur|= BUT_SEL;
 }
 
-int key_pressed( void ) {
-  return ( key_cur ^ key_prv ) & key_cur;
+int but_wentdown( void ) {
+  return ( but_cur ^ but_prv ) & but_cur;
 }
 
 
@@ -728,7 +880,7 @@ void setup() {
   Serial.println(F("Type 'help' for help"));
   Serial.println();
   cmd_init();
-  key_init();
+  but_init();
   eeprom_init();
 }
 
@@ -746,8 +898,19 @@ void loop() {
       Serial.println(); 
     }
   }
-  // Keys
-  key_scan();
-  if( key_pressed() & KEY_UP ) eeprom_read( (eeprom_addr_last+1)%EEPROM_SIZE );
-  if( key_pressed() & KEY_DN ) eeprom_read( (eeprom_addr_last+EEPROM_SIZE-1)%EEPROM_SIZE );
+  // Check for button presses
+  static unsigned long inc=1;
+  but_scan();
+  if( but_wentdown() & BUT_MIN ) { eeprom_read( (eeprom_addr_last+eeprom_size()-inc)%eeprom_size() ); }
+  if( but_wentdown() & BUT_PLS ) { eeprom_read( (eeprom_addr_last              +inc)%eeprom_size() ); }
+  if( but_wentdown() & BUT_SEL  ) { 
+    inc<<=4; 
+    if( inc>=eeprom_size() ) inc=1; 
+    for(int i=0; i<3; i++) {
+      eeprom_read( (eeprom_addr_last              +inc)%eeprom_size() ); 
+      delay(100);
+      eeprom_read( (eeprom_addr_last+eeprom_size()-inc)%eeprom_size() );
+      delay(100);
+    }
+  }
 }
