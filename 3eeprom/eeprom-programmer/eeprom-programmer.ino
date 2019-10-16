@@ -71,9 +71,11 @@ long mega328_Vcc(void) {
 #define EEPROM_PIN_DATA  12
 #define EEPROM_PIN_CLK   13
 #define EEPROM_PIN_LATCH A0 // comment out when using 74HTC164 (or leave it defined: nothing will happen since pin EEPROM_PIN_LATCH is unconnected, and 164 outputs without latch pulse)
-#define EEPROM_PIN_CE    A2
-// These Nano pins control the MUX
-#define EEPROM_PIN_16n64 A1
+// These Nano pins control other EEPROM signals
+#define EEPROM_PIN_16n64 A1 // Control the MUX for pin23 (see drawing below)
+#define EEPROM_PIN_nCE   A2
+#define EEPROM_PIN_RDY   A6 // not used currently
+
 
 // This sketch supports two types of EEPROMS: 28C16 (2kB) and 28C64 (8kB).
 // All pins of the 28C16 have identical function on the 28C64 (when the GND pins are aligned), 
@@ -131,11 +133,11 @@ unsigned int eeprom_size( void ) {
 #define EEPROM_CE_ENABLE  LOW
 #define EEPROM_CE_DISABLE HIGH
 void eeprom_ce_set(int ce) {
-  digitalWrite(EEPROM_PIN_CE, ce );
+  digitalWrite(EEPROM_PIN_nCE, ce );
 }
 
 int eeprom_ce_get(void) {
-  return digitalRead(EEPROM_PIN_CE);  
+  return digitalRead(EEPROM_PIN_nCE);  
 }
   
 // Set all Nano data pins to `input`
@@ -179,7 +181,7 @@ void eeprom_init() {
   digitalWrite(EEPROM_PIN_nOE  ,HIGH); // On EEPROM, set Output Enable to "off" (low active)
   digitalWrite(EEPROM_PIN_DATA ,LOW ); // On Shift IC, set data low (not so important)
   digitalWrite(EEPROM_PIN_CLK  ,LOW ); // On Shift IC, set clock low (rising edge later will clock-in data)
-  digitalWrite(EEPROM_PIN_CE   ,HIGH); // On EEPROM, set CE to "off" (low active)
+  digitalWrite(EEPROM_PIN_nCE  ,HIGH); // On EEPROM, set CE to "off" (low active)
   #ifdef EEPROM_PIN_LATCH
   digitalWrite(EEPROM_PIN_LATCH,LOW ); // On Shift IC, set latch low (rising edge later will latch data)
   #endif
@@ -190,7 +192,7 @@ void eeprom_init() {
   pinMode(EEPROM_PIN_nOE  , OUTPUT);
   pinMode(EEPROM_PIN_DATA , OUTPUT);
   pinMode(EEPROM_PIN_CLK  , OUTPUT);
-  pinMode(EEPROM_PIN_CE   , OUTPUT);
+  pinMode(EEPROM_PIN_nCE  , OUTPUT);
   #ifdef EEPROM_PIN_LATCH
   pinMode(EEPROM_PIN_LATCH, OUTPUT);
   #endif
@@ -654,7 +656,7 @@ const char cmd_help_longhelp[] PROGMEM =
 void cmd_options_print() { 
   int mux=digitalRead(EEPROM_PIN_16n64); 
   Serial.print(F("options: type: ")); Serial.print( mux?F("28c16 (2k*8b = "):F("28c64 (8k*8b = ") ); Serial.print( eeprom_size(),HEX ); Serial.println( F("B) ") ); 
-  Serial.print(F("options: chip: ")); Serial.println( digitalRead(EEPROM_PIN_CE)==LOW?F("enabled"):F("disabled")); 
+  Serial.print(F("options: chip: ")); Serial.println( digitalRead(EEPROM_PIN_nCE)==LOW?F("enabled"):F("disabled")); 
 }
 char * s_type = "type";
 char * s_chip = "chip";
@@ -830,9 +832,9 @@ void cmd_add(int ch) {
 // Buttons =============================================================
 
 // Pins for the keys
-#define BUT_PIN_PLS  A5
-#define BUT_PIN_MIN  A4
-#define BUT_PIN_SEL  A3
+#define BUT_PIN_PLS  A5 // Plus or Up
+#define BUT_PIN_MIN  A4 // Minus or Down
+#define BUT_PIN_SEL  A3 // Change selection
 
 // Code for the keys
 #define BUT_PLS  1
@@ -885,19 +887,20 @@ void setup() {
 }
 
 void loop() {
-  // Serial
-  int n=0;
+  
+  // Check incoming serial chars
+  int n=0; // Counts number of bytes read, this is roughly the number of bytes in the UART buffer
   while(1) {
     int ch= Serial.read();
     if( ch==-1 ) break;
-    cmd_add(ch);
-    if( ++n==SERIAL_RX_BUFFER_SIZE ) { 
+    if( ++n==SERIAL_RX_BUFFER_SIZE ) { // Possible UART buffer overflow
       cmd_verify_uartoverflow++; 
-      Serial.println(); 
-      Serial.println( F("WARNING: uart overflow") ); 
-      Serial.println(); 
+      Serial.println(); Serial.println( F("WARNING: uart overflow") ); Serial.println(); 
     }
+    // Process read char by feeding it to command interpreter
+    cmd_add(ch);
   }
+  
   // Check for button presses
   static unsigned long inc=1;
   but_scan();
@@ -913,4 +916,5 @@ void loop() {
       delay(100);
     }
   }
+  
 }
