@@ -148,20 +148,22 @@ Let's have a look at the details, which I captured with my logic analyser, a [Sa
 
 ![Annotated trace](trace.png)
 
-- The first row `CPU-CLK` show the 6502 clock signal. At (1) a cycle starts; the diagram shows only one cycle.
-- The second row `PHI2` shows the ϕ2 as output by the 6502. Note that it is indeed a bit delayed with respect to the clock. 
-  Especially the falling edges (2a) and (2b) are delayed, for the rising edge we do not see a delay.
-- The third row `nSEG-SEL` is the 8xxx output of the address decoder. Note that it goes low as soon as A12-A15 form 8.
+- The first row `00 CPU-CLK` show the 6502 clock signal. At (1) a cycle starts; the diagram shows only one cycle.
+- The second row `02 PHI2` shows the ϕ2 as output by the 6502. Note that it is indeed a bit delayed with respect to the clock. 
+  Especially the falling edges (2a) and (2b) are delayed, for the rising edge we do not see a delay
+  (but this is probably due to the accuracy of my Saleae).
+- The third row `01 nSEG-SEL` is the 8xxx output of the address decoder. Note that it goes low as soon as A12-A15 form 8.
   We see that (3) is a bit later then (2a), which makes sense. Not only does our address decoder need some time,
   also the 6502 itself outputs A0-A15 some time (tADS, see [timing diagram](.../4ram/README.md#413-6502-read))
   after ϕ2 goes low. (3) is an important moment: the address decoder notices that the 7-sgement will be written.
-- Again, completely following the [spec](../4ram/README.md#414-6502-write), the data line on row 5 becomes 
-  valid (4) just after ϕ2 goes high. Also (4) is important, this is the data that needs to go to the 7-segment display.
-- Row 4 `SEG-CLK` shows the clock signal fed to the D flip-flops; we made this signal as an OR from
+- Again, completely following the [spec](../4ram/README.md#414-6502-write), the data line for segment 'a' (D0)
+  on row 5 `03 D-A` becomes valid (4) just after ϕ2 goes high. Also (4) is important, this is the data that 
+  needs to go to the 7-segment display.
+- Row 4 `05 SEG-CLK` shows the clock signal fed to the D flip-flops; we made this signal as an OR from
   `PHI2` and `nSEG-SEL`. The red up arrow shows the rising edge that causes the flip-flops to clock-in.
-- At the moment the `SEG-CLK` goes high (red arrow), the data (for "segment a" `D-A` on row 5) is high (green circle), 
-  which causes the flip-flop to "flip" its output to high (green arrow on row 6 `SEG-A` showing the line to segment a).
-- Note, at the end of the clock, the address lines (5a) as well as the data lines (5b) "reset" (change for the next instruction).
+- At the moment the `SEG-CLK` goes high (red arrow), the data D0 (for segment 'a' `D-A` on row 5) is high (green circle), 
+  which causes the flip-flop to "flip" its output to high (green arrow on row 6 `04 SEG-A` showing the line to segment 'a').
+- Note, at the end of the clock, the address lines (5a) as well as the data lines (5b) change for the next instruction.
 - Our OR causes a problem: the `SEG-CLK` signal gets an extra bump (6). So we have two rising edges per clock.
   How big is that problem?
 
