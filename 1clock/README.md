@@ -78,6 +78,7 @@ The RES not only has a pull-up, it is also hooked to the reset circuit (see belo
 
 > Sorry if I mix up ϕ and φ.
 > I type these unicode characters in my text editor, but they come out swapped in my web browser...
+> [ex1](unicode-chrome-windows-edit.png) [ex2](unicode-chrome-windows-view.png)
 
 A special category of input pins are the data pins.
 I have wired them 1110 1010 or EA, which is the opcode for NOP.
