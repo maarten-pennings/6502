@@ -213,7 +213,8 @@ And, we are lucky. The [spec](../4ram/README.md#414-6502-write) guarentees that 
 #### 6.3.5.6. Timing conclusion
 
 All observed cases clock-in the correct data, but sometimes this is preceeded by an incorrect one.
-This seems acceptable. However, I do not like the extra dip, so I think the circuit needs to be clocked.
+This seems acceptable. However, I do not like the extra dip, and the time seems to be based on luck.
+So I think the circuit needs to be clocked.
   
 
 ## 6.4. VIA
