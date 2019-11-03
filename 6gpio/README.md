@@ -170,7 +170,8 @@ Let's have a look at the details, which I captured with my logic analyser, a [Sa
 #### 6.3.5.2. Timing OK
 
 The trace below shows the `SEG-CLK` goes up twice. The first time the data is still old, but the second time (blue box)
-the data is (as specified by the 6502 timing diagram) correct, and clocked in.
+the data is (as specified by the 6502 timing diagram) correct, and clocked in. 
+This capture happens to show the behavior we want to see on the segment.
 
 ![Annotated trace "ok"](trace-ok.png)
 
@@ -178,6 +179,7 @@ the data is (as specified by the 6502 timing diagram) correct, and clocked in.
 
 The trace below shows a case where the first rising edge (first red arrow) already clocks in the data.
 The second rising edge clocks-in the correct data (blue box), in this case the data is the same.
+This capture shows the segment updates earlier then expected, but that is ok.
 
 ![Annotated trace "early"](trace-early.png)
 
@@ -185,6 +187,7 @@ The second rising edge clocks-in the correct data (blue box), in this case the d
 
 The trace below shows that the early clock-in, is not always the correct data.
 The second clock-in does take the correct data, but there is a 0.4us flicker on the display.
+This capture shows the circuit is sub-optimal, we have a flicker on the segment.
 
 ![Annotated trace "correct"](trace-correct.png)
 
@@ -200,9 +203,12 @@ captured timing with the logic analyser.
 Please be aware that my logic analyser has a capture speed of 25MS/s or 40ns per sample. On row 4 we see a small dip of 41.67ns,
 which is in the order of the capture resolution of my device.
 
-Anyhow, row 6 `nSEG-CLK` is now the NOT signal of the `SEG-CLK` we used previously.
+Anyhow, row 5 `06 nSEG-CLK` is now the NOT signal of the `SEG-CLK` we used previously.
 What we see is that the rising edge (given the accuracy of my logic analyzer) comes around the same moment - and the 
 falling edges are ignored. That's why the both circuits (with and without NOT) work.
+
+And, we are lucky. The [spec](../4ram/README.md#414-6502-write) guarentees that data (D-A) stays valued tHW after 
+ϕ2 goes low. tHW is at least 30ns, so with our 41.67ns we are ... well ... lucky. Not production quality.
 
 #### 6.3.5.6. Timing conclusion
 
