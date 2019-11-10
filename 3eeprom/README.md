@@ -24,7 +24,7 @@ We will do the following experiments
  - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
  - [3.5. EEPROM programmer V2](README.md#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
  - [3.6. EEPROM programmer V3](README.md#36-EEPROM-programmer-V3) - Adding support for 8k EEPROMs
- - [3.7. PCB](PCB) - Creating a PCB
+ - [3.7. PCB](README.md#37-PCB) - Creating a PCB
 
 
 ## 3.1. EEPROM programmer
@@ -513,6 +513,12 @@ Adding support for the bigger EEPROM should be feasible; the figure below shows 
 
 Note that we have problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
 wiring VIN should not be a problem. For the A11/nWE we need a simple mux - we can make one with a single quad-NAND.
+
+Software improvements
+- Added support for AT28C64
+- Added support for chip-enable
+- Added 'select' button to speed up address stepping
+- Buttons can no also select EEPROM type and enable
 
 TODO ... photo breadboard ... schema demux ...
 
