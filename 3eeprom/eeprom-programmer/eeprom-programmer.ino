@@ -8,10 +8,9 @@
 // - when sel pressed: flash nibble of address bits
 
 
-
 #define PROG_NAME    "Arduino EEPROM Programmer"
-#define PROG_VERSION "10"
-#define PROG_DATE    "2019 oct 15"
+#define PROG_VERSION "11"
+#define PROG_DATE    "2019 nov 10"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -300,7 +299,7 @@ void eeprom_write(uint16_t addr, uint8_t data ) {
 // The main function is much like c's main, it has argc and argv, but the first param is a pointer to its own descriptor.
 typedef struct cmd_desc_s cmd_desc_t;
 typedef void (*cmd_main_t)( cmd_desc_t * desc, int argc, char * argv[] );
-struct cmd_desc_s { cmd_main_t main; char * name; char * shorthelp; const PROGMEM char * longhelp; };
+struct cmd_desc_s { cmd_main_t main; const char * name; const char * shorthelp; const char * longhelp; };
 extern struct cmd_desc_s cmd_descs[];
 
 // Finds the command descriptor for a command with name `name`.
@@ -396,6 +395,7 @@ void cmd_write_verify_prog(int argc, char * argv[] ) {
 
 // The handler for the "read" command
 void cmd_main_read( struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
   if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
   // read [ <addr> [ <num> ] ]
   if( argc==1 ) { cmd_read(0x000, eeprom_size()); return; }
@@ -457,8 +457,8 @@ const char cmd_program_longhelp[] PROGMEM =
 ;
 
 // The handler for the "verify" command
-char * s_clear = "clear";
-char * s_print = "print";
+const char * s_clear = "clear";
+const char * s_print = "print";
 uint32_t cmd_verify_ms;
 int cmd_verify_uartoverflow;
 void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
@@ -513,6 +513,7 @@ void cmd_erase(uint16_t addr, uint16_t num, uint8_t data, uint16_t step ) {
 
 // The handler for the "erase" command
 void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
   if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
   // erase [ <addr> [ <num> [ <data> [ <step> ] ] ] ]
   if( argc==1 ) { cmd_erase(0x000, eeprom_size(), 0xFF, 0); return; }
@@ -554,6 +555,9 @@ const char cmd_erase_longhelp[] PROGMEM =
 
 // The handler for the "info" command
 void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
+  (void)argc; // unused
+  (void)argv; // unused
   Serial.println(F("info: name   : " PROG_NAME));
   Serial.println(F("info: author : " PROG_AUTHOR));
   Serial.println(F("info: version: " PROG_VERSION));
@@ -573,10 +577,11 @@ const char cmd_info_longhelp[] PROGMEM =
 // The handler for the "echo" command
 extern bool cmd_echo;
 void cmd_echo_print() { Serial.print(F("echo: ")); Serial.println(cmd_echo?F("enabled"):F("disabled")); }
-char * s_enable = "enable";
-char * s_disable = "disable";
-char * s_line = "line";
+const char * s_enable = "enable";
+const char * s_disable = "disable";
+const char * s_line = "line";
 void cmd_main_echo(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
   if( argc==1 ) {
     cmd_echo_print();
     return;
@@ -620,6 +625,7 @@ const char cmd_echo_longhelp[] PROGMEM =
 // The handler for the "help" command
 extern struct cmd_desc_s cmd_descs[];
 void cmd_main_help(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
   if( argc==1 ) {
     Serial.println(F("Available commands"));
     for( struct cmd_desc_s * d= cmd_descs; d->name!=0; d++ ) {
@@ -633,7 +639,7 @@ void cmd_main_help(struct cmd_desc_s * desc, int argc, char * argv[] ) {
       Serial.println(F("ERROR: help: command not found (try 'help')"));    
     } else {
       // longhelp is in PROGMEM so we need to get the chars one by one...
-      for(int i=0; i<strlen_P(d->longhelp); i++) 
+      for(unsigned i=0; i<strlen_P(d->longhelp); i++) 
         Serial.print((char)pgm_read_byte_near(d->longhelp+i));
     }
   } else {
@@ -658,11 +664,12 @@ void cmd_options_print() {
   Serial.print(F("options: type: ")); Serial.print( mux?F("28c16 (2k*8b = "):F("28c64 (8k*8b = ") ); Serial.print( eeprom_size(),HEX ); Serial.println( F("B) ") ); 
   Serial.print(F("options: chip: ")); Serial.println( digitalRead(EEPROM_PIN_nCE)==LOW?F("enabled"):F("disabled")); 
 }
-char * s_type = "type";
-char * s_chip = "chip";
-char * s_28c16 = "28c16";
-char * s_28c64 = "28c64";
+const char * s_type = "type";
+const char * s_chip = "chip";
+const char * s_28c16 = "28c16";
+const char * s_28c64 = "28c64";
 void cmd_main_options(struct cmd_desc_s * desc, int argc, char * argv[] ) {
+  (void)desc; // unused
   if( argc==1 ) {
     cmd_options_print();
     return;
@@ -671,7 +678,6 @@ void cmd_main_options(struct cmd_desc_s * desc, int argc, char * argv[] ) {
   int opt_ce= EEPROM_CE_NONE;
   int argix= 1;
   while( argix<argc ) {
-    Serial.print(argix);
     if( strstr(s_type,argv[argix])==s_type ) {
       // There is a 'type' subcommand. Was there already one?
       if( opt_type!=EEPROM_TYPE_NONE ) { Serial.println(F("ERROR: options: 'type' already passed")); return; }
@@ -822,7 +828,7 @@ void cmd_add(int ch) {
       cmd_buf[cmd_ix++]= ch;
       if( cmd_echo ) Serial.print((char)ch);
     } else {
-      if( cmd_echo ) Serial.print("_");
+      if( cmd_echo ) Serial.print("_\b");
       // input buffer full
     }
   }
@@ -904,17 +910,30 @@ void loop() {
   // Check for button presses
   static unsigned long inc=1;
   but_scan();
-  if( but_wentdown() & BUT_MIN ) { eeprom_read( (eeprom_addr_last+eeprom_size()-inc)%eeprom_size() ); }
-  if( but_wentdown() & BUT_PLS ) { eeprom_read( (eeprom_addr_last              +inc)%eeprom_size() ); }
-  if( but_wentdown() & BUT_SEL  ) { 
-    inc<<=4; 
-    if( inc>=eeprom_size() ) inc=1; 
-    for(int i=0; i<3; i++) {
-      eeprom_read( (eeprom_addr_last              +inc)%eeprom_size() ); 
-      delay(100);
-      eeprom_read( (eeprom_addr_last+eeprom_size()-inc)%eeprom_size() );
-      delay(100);
-    }
+  if(  eeprom_ce_get()==EEPROM_CE_ENABLE ) {
+    // EEPROM is enabled, button presses select address
+    if( but_wentdown() & BUT_MIN ) { eeprom_read( (eeprom_addr_last+eeprom_size()-inc)%eeprom_size() ); }
+    if( but_wentdown() & BUT_PLS ) { eeprom_read( (eeprom_addr_last              +inc)%eeprom_size() ); }
+    if( but_wentdown() & BUT_SEL  ) { 
+      inc<<=4; 
+      if( inc>=eeprom_size() ) inc=1; 
+      uint16_t last= eeprom_addr_last;
+      unsigned long mask= 15*inc;
+      eeprom_ce_set(EEPROM_CE_DISABLE);
+      for(int i=0; i<5; i++) {
+        eeprom_read( (eeprom_addr_last & ~mask )%eeprom_size() ); 
+        delay(75);
+        eeprom_read( (eeprom_addr_last |  mask )%eeprom_size() );
+        delay(75);
+      }
+      eeprom_read( last );
+      eeprom_ce_set(EEPROM_CE_ENABLE);
+    }  
+  } else {
+    // EEPROM is disabled, button presses select type
+    if( but_wentdown() & BUT_MIN ) { eeprom_type_set(EEPROM_TYPE_28C64); }
+    if( but_wentdown() & BUT_PLS ) { eeprom_type_set(EEPROM_TYPE_28C16); }
+    if( but_wentdown() & BUT_SEL ) { eeprom_ce_set(EEPROM_CE_ENABLE); }
   }
   
 }
