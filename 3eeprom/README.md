@@ -24,6 +24,7 @@ We will do the following experiments
  - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
  - [3.5. EEPROM programmer V2](README.md#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
  - [3.6. EEPROM programmer V3](README.md#36-EEPROM-programmer-V3) - Adding support for 8k EEPROMs
+ - [3.7. PCB](PCB) - Creating a PCB
 
 
 ## 3.1. EEPROM programmer
@@ -513,4 +514,25 @@ Adding support for the bigger EEPROM should be feasible; the figure below shows 
 Note that we have problems for two pins: NC/VIN and A11/nWE. If we can believe the datasheet, the NC is really not connected, so
 wiring VIN should not be a problem. For the A11/nWE we need a simple mux - we can make one with a single quad-NAND.
 
-To be continued...
+TODO ... photo breadboard ... schema demux ...
+
+## 3.7. PCB
+
+After completing the feasibility on the breadboard, I decided to make a real PCB.
+I used [easyeda](easyeda.com) to draw the [schematic](eeprom-programmer_schema.pdf).
+Next step is to design the layout for the PCB.
+
+![pcb](eeprom-programmer-pcb.png)
+
+Export the gerber file, and send them the [jlcpcb](jlcpcb.com). 
+After some weeks, the five PCBs (the prototype offer) arrived.
+
+![pcb](eeprom-programmer-pcb.jpg)
+
+I 3D printed some support for the LEDs so that they have the same height as the ZIF socket .
+
+![LED stand](eeprom-programmer-ledstand.jpg)
+
+
+
+TODO ... photo with components ... youtube? ...
