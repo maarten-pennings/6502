@@ -28,7 +28,7 @@ We see here a memory chip with 3 address lines (A0, A1, A2). This means the chip
 
 The important part to note here has a blue box labeled "address decoding". We see that every address line splits in two, 
 one being high when the address lines is 0 and one being high when the address line is 1. Each location has an AND port 
-that selects the a unique address pattern from 000 to 111. The locations are labeled with these patterns.
+that selects a unique address pattern from 000 to 111. The locations are labeled with these patterns.
 
 Note the design pattern: address lines, inverters and multi input AND gates to activate locations. That implements address decoding.
 
@@ -73,7 +73,7 @@ memory chips (A,B, C, and D).
 
 ![Four peripheral chips](decoder4x8x4.png)
 
-We see the AND-gate pattern that was _inside_ the chip, now also emerge _outside_ the chip.
+We see the AND-gate pattern that was _inside_ the chip, now also emerges _outside_ the chip.
 
 This is the architecture that we aim for in the [next section](README.md#52-Implementation).
 
@@ -85,13 +85,13 @@ The memory decoder with the four memories (A, B, C and D) leads to this memory m
 
 ![memory map of the four peripheral chips](map4x8x4.png)
 
-Device A runs from 0b00000-0b00111, or 0x00-0x07.
+Device A runs from 0b00000-0b00111, or 0x00-0x07. The upper two bit are 0b00, so device A is could be called device 0.
 
-Device B runs from 0b01000-0b01111, or 0x08-0x0F.
+Device B runs from 0b01000-0b01111, or 0x08-0x0F. The upper two bit are 0b01, so device B is could be called device 1.
 
-Device C runs from 0b10000-0b10111, or 0x10-0x17.
+Device C runs from 0b10000-0b10111, or 0x10-0x17. The upper two bit are 0b10, so device C is could be called device 2.
 
-Device D runs from 0b11000-0b11111, or 0x18-0x1F.
+Device D runs from 0b11000-0b11111, or 0x18-0x1F. The upper two bit are 0b11, so device D is could be called device 3.
 
 
 
