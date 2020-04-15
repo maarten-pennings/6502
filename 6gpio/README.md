@@ -30,8 +30,8 @@ are typically much smaller, so monitoring an address line no longer works.
 
 Enter the second approach. We had a clever idea of having wait loops on specific address ranges.
 As long as the wait loop executes in that range, some address pins have a fixed value.
-As long as the wait loop executes in another range, that address pins has the opposite value.
-We can use that for creating a blink with configurable.
+When the wait loop executes in another range, those address pins have the opposite value.
+We can use that for creating a blink with configurable frequency.
 
 This is what we did when our computer consisted only of a [6502 and EEPROM](../3eeprom#34-blinky).
 Even after adding a [RAM](../4ram#42-adding-ram) we used this approach because we had no other peripherals.
@@ -41,7 +41,7 @@ But even the second appraoch is not very generic: JMPs, RAM accesses and ISRs te
 
 ## 6.2. Address decoding
 
-To have control over LEDs, we need a "GPOI peripheral". In the 6502 world, peripherals are memory mapped.
+To have control over LEDs, we need a "GPIO peripheral". In the 6502 world, peripherals are memory mapped.
 This means we need an address decoder to activate the different peripherals.
 
 The idea is that the decoder has an activation line ("Chip Select") for the peripheral.
