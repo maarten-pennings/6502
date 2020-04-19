@@ -25,6 +25,12 @@ you a nice road to other experiments: let the Nano spy on the address bus, or ev
 > The resonator can also be a ceramic element rather than quartz; cheaper but less stable.
 > Resonators have two wires.
 
+We will do the following experiments
+ - [1.1. Clock - crystal](#11-Clock---crystal) - Using a crystal for clocking
+ - [1.2. Clock - oscillator](#12-Clock---oscillator) - Using an oscillator for clocking
+ - [1.3. Clock - Nano](#13-Clock---Nano) - Using an Arduino Nano for clocking
+
+
 ## 1.1. Clock - crystal
 We can build our own oscillator using a crystal as resonator.
 
