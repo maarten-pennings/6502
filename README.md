@@ -24,8 +24,8 @@ The advantage of this one seems to be that the clock frequency can be low (even 
 We need a clock, a source of pulses. 
 
 The [first chapter](1clock/README.md) discusses three options.
-The hardest way is to build your own oscillator based on a crystal, but I would recommend the next option.
-Much easier is to get that circuit as a whole in a "can".
+The hardest way is to build your own oscillator based on a crystal, but I would recommend the next option:
+get that circuit as a whole in a "can".
 Thirdly, since many have it available: you could also use an Arduino Nano as clock source.
 
 ## 2 Emulation
