@@ -21,12 +21,12 @@ you a nice road to other experiments: let the Nano spy on the address bus, or ev
 > **Terminology**
 > An oscillator is a circuit whose output oscilates. Oscillators have three pins VCC, GND, OUT.
 > The circuit is usually a feedback loop around a "frequency determining element" or resonator. 
-> This element can be a (quartz) crystal, which is accurate and relatively temperature independent.
-> The resonator can also be a ceramic elements rather than quartz; cheaper but less stable.
+> The resonator can be a (quartz) crystal, which is accurate and relatively temperature independent.
+> The resonator can also be a ceramic element rather than quartz; cheaper but less stable.
 > Resonators have two wires.
 
 ## 1.1. Clock - crystal
-We can build our own oscillator using a crystal.
+We can build our own oscillator using a crystal as resonator.
 
 ![Crystal](crystal.jpg)
 
@@ -41,7 +41,7 @@ My resulting board
 
 ![Oscilator board](6502-crystal-board.jpg)
 
-If we put the scope on the clock output, we get a 1MHz pulse (1 period is 2 divisions or 500 ns).
+If we put the scope on the clock output, we get a 1MHz pulse (1 period is 2 divisions of 500 ns).
 
 ![Oscilator board](6502-crystal-output.jpg)
 
@@ -52,13 +52,13 @@ Anyhow, this circuit can be bought as one component, a canned oscillator.
 
 ![Oscilator](oscillator.jpg)
 
-In the next section we use such a can.
+In the next section we use such a can to supply clock ticks to the 6502.
 
 
 ## 1.2. Clock - oscillator
 Our first 6502 board will have a canned oscilator. 
 How to wire it? We need to
- - ensure that all input pins are connected
+ - ensure that all 6502 input pins are connected
  - hook up the clock circuit
  - hook up a reset circuit
  - ensure we can check that the 6502 is running
@@ -110,7 +110,7 @@ Looks good.
 We also see overshoots at the rising edges.
 Although we are running only at 1MHz, it is wise to dampen them.
 That's why we added capacitor C2. You need a small one, like 680p,
-or even smaller, the corners of the pulses are now quite round.
+or even smaller, the corners of the pulses are now less spikey.
 
 ![Output of the oscillator](6502-osc-wcap.jpg)
 
@@ -180,8 +180,8 @@ The following table shows the frequencies and periods of each address lines.
   | A14    |        15 |      65 536 |       0.07 |
   | A15    |         8 |     131 072 |       0.13 |
 
-A15 is pretty fast with its 8Hz, so we fixed a LED to this last address line.
-LEDs on "lower" address lines would flicker so fast that they would look "always on".
+A15 is still pretty fast with its 8Hz, but visible to thehiman eye. We fixed a LED to this last address line.
+LEDs on "lower" address lines flicker so fast that they would look "always on".
 
 Note that A15 start flickering immediately after power on. 
 When we keep the reset button pressed, it stops flickering.
@@ -242,13 +242,13 @@ Find a second sketch for the Nano in directory [clockvar6502](clockvar6502).
 This sketch allows you to enter + or - in the Serial port (the arduino terminal requires a press on the ENTER key as well).
 This will shorten or lengthen the high part of the clock pulse.
 
-In my first version, the program generated this timed pulse
+In my first version, the program generated a 50-50 timed pulse
+```cpp
+  digitalWrite(CLOCK, LOW); wait(50); digitalWrite(CLOCK, HIGH); wait(50); // waits in %
 ```
-go low, wait*0.5, go high, wait*0.5
-```
-but I changed this to
-```
-go low, wait*0.0, go high, wait*1.0
+but I changed this to a 0-100 pulse (the 0 is not completely 0 because it is several nano ticks)
+```cpp
+  digitalWrite(CLOCK, LOW); digitalWrite(CLOCK, HIGH); wait(100); // waits in %
 ```
 because the 6502 stops working when the low time is too long.
 
@@ -302,9 +302,9 @@ press + or - to speed up or slow down
 I especially like the 0.06Hz: 16 seconds per clock is really nice slow stepping.
 Would it be possible to single step with button presses?
 
-The above test was done with 650 variant 2 (Rockwell). 
+The above test was done with 6502 variant 2 (Rockwell). 
 Variant 1 (original MOS) still works at 7.63hz, but stops at 3.81Hz.
-Variant 3 (new MOS?) still wokrs at 0.48Hz, but stops at 0.24Hz or 0.12Hz.
+Variant 3 (new MOS?) still works at 0.48Hz, but stops at 0.24Hz or 0.12Hz.
 
 
 
