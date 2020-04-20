@@ -16,7 +16,7 @@ although the logo and time stamp look different from the first. It does work, bu
 
 [![6502 variant 1](6502-1s.jpg)](6502-1.png) [![6502 variant 2](6502-2s.jpg)](6502-2.png) [![6502 variant 3](6502-3s.jpg)](6502-3.png)
 
-It is all still a bit confusing. I think the best one is the Western Design Center WDC65C02, but I don't have one yet. 
+It is all still a bit confusing. I think the best one is the 65C02, with C of CMOS in the middle. 
 The advantage of this one seems to be that the clock frequency can be low (even stopped).
 
 
