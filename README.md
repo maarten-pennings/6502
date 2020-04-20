@@ -16,8 +16,16 @@ although the logo and time stamp look different from the first. It does work, bu
 
 [![6502 variant 1](6502-1s.jpg)](6502-1.png) [![6502 variant 2](6502-2s.jpg)](6502-2.png) [![6502 variant 3](6502-3s.jpg)](6502-3.png)
 
-It is all still a bit confusing. I think the best one is the 65C02, with C of CMOS in the middle. 
-The advantage of this one seems to be that the clock frequency can be low (even stopped).
+[MOS6502 datasheet](https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf) says 
+"Clock cycle time is minimal 1000ns" or 1us, or you operate the device out of spec. So the old NMOS is not very forgiving.
+
+[R65C02 datasheet](https://www.usbid.com/assets/datasheets/15/rockwell.pdf) says 
+"Caution must be exercised when configuring the R65C02 in the standby mode (i.e. PHI0 clock stopped). The input clock can be held in the high state indefinitely; however, if the input clock is held in the low state longer than 5 microseconds, internal register and data status can be lost." I tried it, and this CMOS version allowed me more 30 second low, but then still, it would loose state.
+
+[W65C02 datasheet](https://www.mouser.com/datasheet/2/436/w65c02s-2572.pdf) says 
+"Phase 2 In (PHI2) is the system clock input to the microprocessor internal clock. During the low power Standby
+Mode, PHI2 can be held in either high or low state to preserve the contents of internal registers since the
+microprocessor is a fully static design." So the modern CMOS version is most flexible. Did buy one yet.
 
 
 ## 1 Clock
