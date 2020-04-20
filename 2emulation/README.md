@@ -121,22 +121,24 @@ It had a random pattern on the address bus, in this case 3586 (hex).
 Just before 409908us I released the reset of the 6502 (you can't see that, it's my guess).
 
 What we see on the address bus can be found in the 6502 datasheet, but is also very well explained
-on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3):
+on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3).
+First two interal `[I]` ticks, then three stack `[S]` ticks, and finally two vectored `[V]` jump 
+ticks - so 7 ticks before our program starts:
 
 ```
                  // 6502 reset released
-   409908us 3586 // first internal administrative operation of 6502
-   411440us 3586 // second internal operation
-   412968us 01ee // push of return address (PCH) on stack, decrement stack pointer (note S is EE)
-   414500us 01ed // push the return address (PCL) on stack, decrement stack pointer (note S is ED)
-   416028us 01ec // push the processor status word (PSW) on stack, decrement stack pointer (note S is EC)
-   417556us fffc // get PCL from reset vector (FFFC), presumably reads EA
-   419088us fffd // get PCH from reset vector (FFFD), presumably reads EA
-   420620us eaea // Jump to reset vector, indeed EAEA. Executes first instruction (NOP)
-   422148us eaeb // Executes 2nd instruction (NOP)
-   423680us eaeb // Executes 2nd instruction (NOP)
-   425208us eaec // Executes 3rd instruction (NOP)
-   426740us eaec // Executes 3rd instruction (NOP)
+   409908us 3586 // (1) [I] first internal administrative operation of 6502
+   411440us 3586 // (2) [I] second internal operation
+   412968us 01ee // (3) [S] push of return address (PCH) on stack, decrement stack pointer (note S reg is EE)
+   414500us 01ed // (4) [S] push the return address (PCL) on stack, decrement stack pointer (note S reg is ED)
+   416028us 01ec // (5) [S] push the processor status word (PSW) on stack, decrement stack pointer (note S reg is EC)
+   417556us fffc // (6) [V] get PCL from reset vector (FFFC), presumably reads EA
+   419088us fffd // (7) [V] get PCH from reset vector (FFFD), presumably reads EA
+   420620us eaea // Fetches 1st instruction (NOP) - after jump via reset vector, indeed EAEA. 
+   422148us eaeb // Executes 1st instruction (NOP)
+   423680us eaeb // Fetches  2nd instruction (NOP)
+   425208us eaec // Executes 2nd instruction (NOP)
+   426740us eaec // Fetches  3rd instruction (NOP)
 ```
 
 Some notes
@@ -146,7 +148,9 @@ Some notes
  - The stack pointer (S) has a random value after reset, in the above run it happened to be EE.
    The stack page is hardwired to 01 on the 6502 (0100-01FF).
  - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
- - I can not explain why the first NOP only takes one clock.
+ - It seems like the first NOP takes only 1 cycle; the `eaeb` appears only once on the address bus. I think at 420620us 
+   the NOP instruction is fetched from `eaea`. It is decoded, and executed in the second tick (422148us). But
+   during the second tick the address bus is already eaeb. During the third tick (423680us) a NOP is fetched from `eaeb`
  - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
 
 
