@@ -120,18 +120,18 @@ Note that the first ~400 000 us of the Nano trace, the 6502 was still in reset.
 It had a random pattern on the address bus, in this case 3586 (hex).
 Just before 409908us I released the reset of the 6502 (you can't see that, it's my guess).
 
-What we see on the address bus can be found in the 6502 datasheet, but is also very well explained
+What we see on the address bus after reset can be found in the 6502 datasheet, but is also very well explained
 on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3).
-First two interal `[I]` ticks, then three stack `[S]` ticks, and finally two vectored `[V]` jump 
-ticks - so 7 ticks before our program starts:
+There are 7 clock ticks before our program starts: first two internal `[I]` ticks, 
+then three stack `[S]` ticks, and finally two vectored `[V]` jump ticks:
 
 ```
                  // 6502 reset released
    409908us 3586 // (1) [I] first internal administrative operation of 6502
    411440us 3586 // (2) [I] second internal operation
-   412968us 01ee // (3) [S] push of return address (PCH) on stack, decrement stack pointer (note S reg is EE)
-   414500us 01ed // (4) [S] push the return address (PCL) on stack, decrement stack pointer (note S reg is ED)
-   416028us 01ec // (5) [S] push the processor status word (PSW) on stack, decrement stack pointer (note S reg is EC)
+   412968us 01ee // (3) [S] push of return address (PCH) on stack, decrement stack pointer S (was EE)
+   414500us 01ed // (4) [S] push the return address (PCL) on stack, decrement stack pointer S (was ED)
+   416028us 01ec // (5) [S] push the processor status word (PSW) on stack, decrement stack pointer S (was EC)
    417556us fffc // (6) [V] get PCL from reset vector (FFFC), presumably reads EA
    419088us fffd // (7) [V] get PCH from reset vector (FFFD), presumably reads EA
    420620us eaea // Fetches 1st instruction (NOP) - after jump via reset vector, indeed EAEA. 
