@@ -1,42 +1,21 @@
 # 6502
 
-Trying to build a 6502 based computer
+Trying to build a 6502 based computer.
 
 ## 0 Introduction
 
-I took up the challenge of building my own computer. I grew up with the [Commodore 64](https://en.wikipedia.org/wiki/Commodore_64).
-It has a [6502](https://en.wikipedia.org/wiki/MOS_Technology_6502) processor. This processor was also used by Apple, Atari, Nintendo.
-It is simple, still available, and many hobbyist before me [documented](http://6502.org/) their projects. So 6502 it was.
-
-I started by ordering hardware. I already had breadboards, jumper wires, resistors, LEDs. The main (first) purchase was the 6502 itself.
-The [first](https://www.aliexpress.com/item/32929325067.html) variant (left) I got was an original one from MOS from 1985.
-I had problems resetting it (on power up it runs, but after a reset if freezes - is it broken?).
-Then I [learned](http://wilsonminesco.com/NMOS-CMOSdif/) that the old ones are NMOS, and that there are new CMOS versions.
-I got my [second](https://www.aliexpress.com/item/32990938828.html) variant (middle), which works well.
-A [third](https://www.aliexpress.com/item/32841499879.html) variant (right) seems to be an old one again,
-although the logo and time stamp look different from the first. It does work, but it gets warmer than the variant 2.
-
-[![6502 variant 1](6502-1s.jpg)](6502-1.png) [![6502 variant 2](6502-2s.jpg)](6502-2.png) [![6502 variant 3](6502-3s.jpg)](6502-3.png)
-
-[MOS6502 datasheet](https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf) says
-"Clock cycle time is minimal 1000ns" or 1us, or you operate the device out of spec. So the old NMOS is not very forgiving.
-
-[R65C02 datasheet](https://www.usbid.com/assets/datasheets/15/rockwell.pdf) says
-"Caution must be exercised when configuring the R65C02 in the standby mode (i.e. PHI0 clock stopped). The input clock can be held in the high state indefinitely; however, if the input clock is held in the low state longer than 5 microseconds, internal register and data status can be lost." I tried it, and this CMOS version allowed me more 30 second low, but then still, it would loose state.
-
-[W65C02 datasheet](https://www.mouser.com/datasheet/2/436/w65c02s-2572.pdf) says
-"Phase 2 In (PHI2) is the system clock input to the microprocessor internal clock. During the low power Standby
-Mode, PHI2 can be held in either high or low state to preserve the contents of internal registers since the
-microprocessor is a fully static design." So the modern CMOS version is most flexible. Didn't buy one yet.
+Why the 6502 and which 6502, a short [introduction](0intro/README.md).
 
 ## 1 Clock
 
 We need a clock, a source of pulses.
 
-The [first chapter](1clock/README.md) discusses three options.
+[Chapter one](1clock/README.md) discusses options for clocks.
 The hardest way is to build your own oscillator based on a crystal, but I would recommend the next option:
 get that circuit as a whole in a "can".
 Thirdly, since many have it available: you could also use an Arduino Nano as clock source.
+
+I also went a different route: slow clocks, based on a NE555 or even human button presses.
 
 ## 2 Emulation
 
