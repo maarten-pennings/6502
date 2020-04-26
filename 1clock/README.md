@@ -1,45 +1,34 @@
 # 1. Clock
-Trying to build a 6502 based computer. 
 
-We need a clock, a source of pulses. There are several options. 
-Remember that a classical 6502 runs at 1MHz. 
-It seems that not much variation is allowed in the clock frequency for the old variants.
-It seems that the new variants allow much more variation. 
-Anyhow, I don't need speed (that only causes all kinds of electrical problems).
-I prefer slow, as in hand clocked, to see in detail what is going on.
+Trying to build a 6502 based computer.
 
-The hardest way is to [build](https://www.grappendorf.net/projects/6502-home-computer/clock-generation.html) your own oscillator 
-based on a [crystal](https://www.aliexpress.com/item/32869213435.html). Tried. Works. Do not recommend.
+We need a clock, a source of pulses. There are several options. Remember that a classical 6502 runs at 1MHz. It seems that not much variation is allowed in the clock frequency for the old variants. It seems that the new variants allow much more variation. Anyhow, I don't need speed; that only causes all kinds of electrical problems. I prefer slow, as in hand clocked, to see in detail what is going on.
 
-Much easier is to get a "[can](https://www.aliexpress.com/item/32887401548.html)" that presumably contains the crystal
-and the passives around it. The 1MHz versions are a bit hard to get. Works well. Do recommend.
+The hardest way is to [build](https://www.grappendorf.net/projects/6502-home-computer/clock-generation.html) your own oscillator based on a [crystal](https://www.aliexpress.com/item/32869213435.html). Tried. Works. Do not recommend.
 
-The third way is more the software approach: use an Arduino Nano to generate the clock. This is especially nice at the start 
-of your project. You might already have it laying around. You do not need to order any other special components, and it gives 
-you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
+Much easier is to get a "[can](https://www.aliexpress.com/item/32887401548.html)" that presumably contains the crystal and the passives around it. The 1MHz versions are a bit hard to get. Works well. Do recommend.
 
-> **Terminology**
-> An oscillator is a circuit whose output oscilates. Oscillators have three pins VCC, GND, OUT.
-> The circuit is usually a feedback loop around a "frequency determining element" or resonator. 
-> The resonator can be a (quartz) crystal, which is accurate and relatively temperature independent.
-> The resonator can also be a ceramic element rather than quartz; cheaper but less stable.
-> Resonators have two wires.
+The third way is more the software approach: use an Arduino Nano to generate the clock. This is especially nice at the start of your project. You might already have it laying around. You do not need to order any other special components, and it gives you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
+
+> **Terminology**  
+> An _oscillator_ is a circuit whose output oscillates. This output signal is used as a _clock_ for some circuit. Oscillators have three pins VCC, GND, OUT. The circuit is usually a feedback loop around a "frequency determining element" or _resonator_. The resonator can be a (quartz) crystal, which is accurate and relatively temperature independent. The resonator can also be a ceramic element rather than quartz; cheaper but less stable. Resonators have two wires.
 
 We will do the following experiments
- - [1.1. Clock - crystal](#11-Clock---crystal) - Using a crystal for clocking
- - [1.2. Clock - oscillator](#12-Clock---oscillator) - Using an oscillator for clocking
- - [1.3. Clock - Nano](#13-Clock---Nano) - Using an Arduino Nano for clocking
 
+- [1.1. Clock - crystal](#11-Clock---crystal) - Using a crystal for clocking
+- [1.2. Clock - oscillator](#12-Clock---oscillator) - Using a canned oscillator for clocking
+- [1.3. Clock - Nano](#13-Clock---Nano) - Using an Arduino Nano for clocking
+- [1.4. Clock - micro switch](#14-Clock---micro-switch) - Using a micro switch for manual clocking
+- [1.5. Clock - NE555](#15-Clock---NE555) - Using an NE555 for clocking
+- [1.6. Triple clock module](#16-Triple-clock-module) - A standard clock module
 
 ## 1.1. Clock - crystal
+
 We can build our own oscillator using a crystal as resonator.
 
 ![Crystal](crystal.jpg)
 
-We also need two inverters, two resistors and a capacitor. 
-A third inverter is the buffer amplifier for the output signal, the 1MHz clock.
-For the inverters we take the 7404 IC  ("hex inverters").
-This is the complete schematics
+We also need two inverters, two resistors and a capacitor. A third inverter is the buffer amplifier for the output signal, the 1MHz clock. For the inverters we take the 7404 IC  ("hex inverters"). This is the complete schematics
 
 ![Oscilator circuit](6502-crystal-schem.png)
 
@@ -51,172 +40,139 @@ If we put the scope on the clock output, we get a 1MHz pulse (1 period is 2 divi
 
 ![Oscilator board](6502-crystal-output.jpg)
 
-Note that especially the falling edges have overshoot. Adding a small cap would help.
-In some cases, my oscillator locks in on 2.6MHz instead of 1 MHz. I do not know why.
+Note that especially the falling edges have overshoot. Adding a small capacitor will help (see [1.2.2.](#122-Clock---oscillator---clock-circuit) for an example). In some cases, my oscillator locks in on 2.6MHz instead of 1 MHz. I do not know why.
 
-Anyhow, this circuit can be bought as one component, a canned oscillator. 
+Anyhow, this circuit can be bought as one component, a canned oscillator.
 
 ![Oscilator](oscillator.jpg)
 
 In the next section we use such a can to supply clock ticks to the 6502.
 
-
 ## 1.2. Clock - oscillator
-Our first 6502 board will have a canned oscilator. 
-How to wire it? We need to
- - ensure that all 6502 input pins are connected
- - hook up the clock circuit
- - hook up a reset circuit
- - ensure we can check that the 6502 is running
+
+Our first 6502 board will have a canned oscillator.  How to wire a 6502? We need to
+
+- ensure that all 6502 input pins are connected
+- hook up the oscillator
+- hook up a reset circuit
+- ensure we can check that the 6502 is running
+
+Find below the schematic used in this section. The subsection will discuss the details.
 
 ![Schematic of 6502 with oscillator](6502-osc-schem.png)
 
 ### 1.2.1. Clock - oscillator - connect all inputs
+
 [This](http://lateblt.tripod.com/bit63.txt) was one of my sources for how to hook up pins.
 
-Of course we hook up GND (twice) and VCC. It seems wise to add some caps, close to the 6502, between GND and VCC. 
-I have a single 100nF (C1).
+Of course we hook up GND (twice!) and VCC. It seems wise to add some caps, close to the 6502, between GND and VCC. I have a single 100nF (C1).
 
-All input pins (I made them yellow) need to be connected.
-All signal pins (RDY, IRQ, NMI, RES, SO) are low-active, so I hooked them via a pullup to VCC. My pull-ups are 2k2Ω.
-The ϕ0 is the clock-input, we hook it to the oscillator (see below).
-The RES not only has a pull-up, it is also hooked to the reset circuit (see below).
+All input pins (I made them yellow in the schematic above) need to be connected (a common advise for chips). All signal pins (RDY, nIRQ, nNMI, nRES, nSO) are low-active (RDY is edge sensitive), so I hooked them via a pull-up to VCC. My pull-ups are 2k2Ω. The ϕ0 is the clock-input, we hook it to the oscillator (see [1.2.2.](#122-Clock---oscillator---clock-circuit)). The nRES not only has a pull-up, it is also hooked to the reset circuit (see below).
 
-> Sorry if I mix up ϕ and φ.
-> I type these unicode characters in my text editor, but they come out swapped in my web browser...
-> [ex1](unicode-chrome-windows-edit.png) [ex2](unicode-chrome-windows-view.png)
+> Sorry if I mix up ϕ and φ. I type these unicode characters in my text editor, but they come out swapped in my web browser... [ex1](unicode-chrome-windows-edit.png) [ex2](unicode-chrome-windows-view.png)
 
-A special category of input pins are the data pins.
-I have wired them 1110 1010 or EA, which is the opcode for NOP.
-This means that the 6502 will always read NOP and will thus free run (spin around).
-See also [James Calvert](http://mysite.du.edu/~jcalvert/tech/6504.htm).
+A special category of input pins are the _data_ pins (D0..D7). I have wired them 1110 1010 or EA, which is the opcode for NOP. This means that the 6502 will always read NOP and will thus free run (spin around). See also [James Calvert](http://mysite.du.edu/~jcalvert/tech/6504.htm).
 
-There is one subtlety: also the reset vector (hardwired to FFFC and FFFD) will be read as EAEA.
-But once the 6502 jumps to that address, it reads NOPs.
+There is one subtlety: also the reset vector (hardwired to FFFC and FFFD) will be read as EAEA. But once the 6502 jumps to that address, it reads NOPs.
 
-The NC pins and address pins are not connected.
+The NC pins and address pins (A0..A15) are not connected.
+
+That results in a relatively empty breadboard.
 
 ![Board with 6502 and oscillator](6502-osc-board.jpg)
 
 ### 1.2.2. Clock - oscillator - clock circuit
-As a clock circuit, we have a canned oscillator, an [MCO-1510A](http://mklec.com/pdf/MCO-1510A.pdf).
-Pin 1 is NC (not connected).
-Pin 7 (yes, not 2) is grounded.
-Pin 8 is the OUTPUT; the clock towards the 6502.
-Pin 14 is VCC.
 
-Once VCC and GND are connected, you can put a scope on OUTPUT.
+As a clock circuit, we have a canned oscillator, an [MCO-1510A](http://mklec.com/pdf/MCO-1510A.pdf). Pin 1 is NC (not connected). Pin 7 (yes, not 2) is grounded. Pin 8 is the OUTPUT; the clock towards the 6502. Pin 14 is VCC.
+
+Once VCC and GND are connected, the OUTPUT shows a square wave. Here is the scope capture.
 
 ![Output of the oscillator](6502-osc-nocap.jpg)
 
-Vertically, we have 2.5 divisions of each 2V, so a swing of 5V.
-Horizontally, we have two divisions per pulse so 1000ns or 1us or 1Mhz.
-Looks good.
+Vertically, we have 2.5 divisions of each 2V, so a swing of 5V. Horizontally, we have two divisions per pulse so 1000ns or 1us or 1MHz. Looks good.
 
-We also see overshoots at the rising edges.
-Although we are running only at 1MHz, it is wise to dampen them.
-That's why we added capacitor C2. You need a small one, like 680p,
-or even smaller, the corners of the pulses are now less spikey.
+We also see overshoots at both the rising and falling edges. Although we are running only at 1MHz, it is wise to dampen them. That's why we added capacitor C2. You need a small one, like 680p, or even smaller, the corners of the pulses are now less spikey.
 
 ![Output of the oscillator](6502-osc-wcap.jpg)
 
 ### 1.2.3. Clock - oscillator - reset circuit
-We keep it simple. A push button pulls RES to ground.
-We added a cap to supress (bounce) spikes and have a slow release.
 
-In case you are wondering C=100nF, R=2k2Ω, so the rise time 𝜏 = R×C = 100n×2k2 = 220us.
-Indeed, on the scope we see that in one division (200us) the signal is at 63% (1𝜏).
+We keep the reset circuit simple. A push button pulls (low active) nRES to ground. We added a cap to suppress (bounce) spikes and have a slow release.
+
+In case you are wondering C=100nF, R=2k2Ω, so the rise time 𝜏 = R×C = 100n×2k2 = 220us. Indeed, on the scope we see that in one division (200us) the signal is at 63% (1𝜏).
 
 ![Reset time](6502-osc-reset.jpg)
 
-Some hook up an NE555 to reset-after-power-on, 
-see e.g. [Grappendorf](https://www.grappendorf.net/projects/6502-home-computer/reset-circuit.html).
+Some hook up an NE555 to reset-after-power-on, see e.g. [Grappendorf](https://www.grappendorf.net/projects/6502-home-computer/reset-circuit.html).
 
 ### 1.2.4. Clock - oscillator - running
-The most easy way to see that the 6502 is running, is to monitor its address lines.
-Note that NOP is a one byte instruction (size-wise), but that it takes 2 cycles (time-wise).
+
+The most easy way to see that the 6502 is running, is to monitor its address lines. Note that NOP is a one byte instruction (size-wise), but that it takes 2 cycles (time-wise).
 
 ![NOP takes 2 cycles](NOP.png)
 
-At some moment in time, the address (just picking one) 0x8000 is read. 
-Let's call the tick at that moment tick 0. 
-The 6502 finds a NOP. Executing that NOP takes tick 0 and 1.
-On clock tick 2 address 0x8001 is read, and the 6502 finds again a NOP.
-Executing the second NOP takes tick 2 and 3.
-And so on.
+At some moment in time, the address (just picking one) 0x8000 is read. Let's call the tick at that moment tick 0. The 6502 finds a NOP. Executing that NOP takes tick 0 and 1. On clock tick 2 address 0x8001 is read, and the 6502 finds again a NOP. Executing the second NOP takes tick 2 and 3. And so on.
 
-  |  tick  | address | instruction |  A0  |
-  |:------:|:-------:|:-----------:|:----:|
-  |    0   | 0x8000  |  NOP (1st)  |   0  |
-  |    1   | 0x8000  |  NOP (1st)  |   0  |
-  |    2   | 0x8001  |  NOP (2nd)  |   1  |
-  |    3   | 0x8001  |  NOP (2nd)  |   1  |
-  |    4   | 0x8002  |  NOP (3rd)  |   0  |
-  |    5   | 0x8002  |  NOP (3rd)  |   0  |
+|  tick  | address | instruction |  A0  |
+|:------:|:-------:|:-----------:|:----:|
+|    0   | 0x8000  |  NOP (1st)  |   0  |
+|    1   | 0x8000  |  NOP (1st)  |   0  |
+|    2   | 0x8001  |  NOP (2nd)  |   1  |
+|    3   | 0x8001  |  NOP (2nd)  |   1  |
+|    4   | 0x8002  |  NOP (3rd)  |   0  |
+|    5   | 0x8002  |  NOP (3rd)  |   0  |
 
-What we see from the tabel above is that two full periods of the clock (tick 0 and 1), A0 is low.
-And then the next two clock periods (tick 2 and 3) A0 is high.
-So it takes 4 clock periods for one A0 period.
+What we see from the table above is that two full periods of the clock (tick 0 and 1), A0 is low. And then the next two clock periods (tick 2 and 3) A0 is high. So it takes 4 clock periods for one A0 period.
 
-This is confirmed on the scope, the top shows A0, the botton the clock
+This is confirmed on the scope, the top shows A0, the bottom the clock.
 
 ![Clock and A0](6502-osc-addr.jpg)
 
-Note that the clock runs at 1MHz.
-The following table shows the frequencies and periods of each address lines.
+Note that the clock runs at 1MHz. The following table shows the frequencies and periods of each address line.
 
-  |  line  | freq (Hz) | period (us) | period (s) |
-  |:-------|----------:|------------:|-----------:|
-  | clock  | 1 000 000 |           1 |            |
-  |        |   500 000 |           2 |            |
-  | A0     |   250 000 |           4 |            |
-  | A1     |   125 000 |           8 |            |
-  | A2     |    62 500 |          16 |            |
-  | A3     |    31 250 |          32 |            |
-  | A4     |    15 625 |          64 |            |
-  | A5     |     7 813 |         128 |            |
-  | A6     |     3 906 |         256 |            |
-  | A7     |     1 953 |         512 |            |
-  | A8     |       977 |       1 024 |            |
-  | A9     |       488 |       2 048 |            |
-  | A10    |       244 |       4 096 |       0.00 |
-  | A11    |       122 |       8 192 |       0.01 |
-  | A12    |        61 |      16 384 |       0.02 |
-  | A13    |        31 |      32 768 |       0.03 |
-  | A14    |        15 |      65 536 |       0.07 |
-  | A15    |         8 |     131 072 |       0.13 |
+|  line  | freq (Hz) | period (us) | period (s) |
+|:-------|----------:|------------:|-----------:|
+| clock  | 1 000 000 |           1 |            |
+|        |   500 000 |           2 |            |
+| A0     |   250 000 |           4 |            |
+| A1     |   125 000 |           8 |            |
+| A2     |    62 500 |          16 |            |
+| A3     |    31 250 |          32 |            |
+| A4     |    15 625 |          64 |            |
+| A5     |     7 813 |         128 |            |
+| A6     |     3 906 |         256 |            |
+| A7     |     1 953 |         512 |            |
+| A8     |       977 |       1 024 |            |
+| A9     |       488 |       2 048 |            |
+| A10    |       244 |       4 096 |       0.00 |
+| A11    |       122 |       8 192 |       0.01 |
+| A12    |        61 |      16 384 |       0.02 |
+| A13    |        31 |      32 768 |       0.03 |
+| A14    |        15 |      65 536 |       0.07 |
+| A15    |         8 |     131 072 |       0.13 |
 
-A15 is still pretty fast with its 8Hz, but visible to thehiman eye. We fixed a LED to this last address line.
-LEDs on "lower" address lines flicker so fast that they would look "always on".
+A15 is still pretty fast with its 8Hz, but visible to the human eye. I fixed a LED to this last address line. LEDs on "lower" address lines flicker so fast that they would appear "always on".
 
-Note that A15 start flickering immediately after power on. 
-When we keep the reset button pressed, it stops flickering.
-When releasing the reset, the flickering starts again.
-Success, we have a 6502 in "free run"!
-
+Note that A15 start flickering immediately after power on. When we keep the reset button pressed, it stops flickering. When releasing the reset, the flickering starts again. Success, we have a 6502 in "free run"!
 
 ## 1.3. Clock - Nano
-Our second board will have an Arduino Nano as clock generator.
-Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano).
-Of course you can also get a [clone](https://www.aliexpress.com/item/32969876875.html).
+
+Our second board will have an Arduino Nano as clock generator. Basically, we replace the MCO-1510A canned oscillator with a [Nano](https://store.arduino.cc/arduino-nano). Of course you can also get a [clone](https://www.aliexpress.com/item/32969876875.html).
 
 ### 1.3.1. Clock - Nano - wiring
-It is not much different from the previous board, but it offers much more flexibility.
-One nice feature is that you can power the 6502 from the Nano (connect 5V0 to VCC, and of course connect all GNDs).
-This feature is a bit hidden in the schematic below:
+
+The wiring on the second board is not much different from the previous board, but it offers much more flexibility. One nice feature is that you can power the 6502 from the Nano (connect 5V0 to VCC, and of course connect all GNDs). This feature is a bit hidden in the schematic below.
 
 ![Schematic of 6502 with Nano](6502-nano-schem.png)
 
-We need the same "stubs": RDY, nIRQ, nNMI, nRES, SO are pulled-up. 
-Have a button to pull-down nRES.
-Wire data lines D0-D7 to 1110 1010 representing NOP.
-New is that ϕ0 is connected to D2 of the Nano.
-Since the Nano will be slower than the oscillator it is good to have LEDs on lower address lines (e.g. A1, A5, A10) too.
+It might be wise to add a capacitor between the clock and VCC, just as we had with the canned oscillator.
+
+We need the same "stubs": RDY, nIRQ, nNMI, nRES, nSO are pulled-up. Have a button to pull-down nRES. Wire data lines D0-D7 to 1110 1010 (0xEA) representing NOP. New is that ϕ0 is connected to D2 of the Nano. Since the Nano will be slower than the oscillator it is good to have LEDs on lower address lines (e.g. A1, A5, A10) too.
 
 ![Board with 6502 clocked by a Nano](6502-nano-board.jpg)
 
-
 ### 1.3.2. Clock - Nano - software
+
 Find the sketch for the Nano in directory [clock6502](clock6502).
 It is a simple sketch that just flips the clock line:
 
@@ -229,38 +185,39 @@ void loop() {
 
 We will see later that this generates a clock of ~160kHz.
 
-We could speed this up by using direct SFR manipulation of the Nano, see for example this 
-[video](https://www.youtube.com/watch?v=U7I0GkwW1yE) of Julian Ilett.
-However, we are going to add so much code later on, that it doesn't help.
-
+We could speed this up by using direct SFR manipulation of the Nano, see for example this [video](https://www.youtube.com/watch?v=U7I0GkwW1yE) of Julian Ilett. However, we are going to add so much code later on, that it doesn't help.
 
 ### 1.3.3. Clock - Nano - running
+
+The scope confirms the slow clock: 7 divisions (35us) is 5 periods, so one period is 7us. The clock frequency is thus 143kHz, let us "round that up" to 160kHz.
+
 ![Clock generated by the Nano](6502-nano.jpg)
 
-The scope confirms the slow clock: 7 divisions (35us) is 5 periods, so one period is 7us.
-The clock frequency is thus 143kHz, let me be so bold to treat it as 160kHz.
-
-Note that the Nano itself runs on 16MHz. This means that the `loop()` takes roughly 100 (16M/160k) Nano clock cycles to 
-generate one 6502 clock cycle. So, a single `digitalWrite()` takes roughly 50 cycles.
+Note that the Nano itself runs on 16MHz. This means that the `loop()` takes roughly 100 (16M/160k) Nano clock cycles to generate one 6502 clock cycle. So, a single `digitalWrite()` takes roughly 50 cycles.
 
 ### 1.3.4. Clock - Nano - software II
+
 Find a second sketch for the Nano in directory [clockvar6502](clockvar6502).
 This sketch allows you to enter + or - in the Serial port (the arduino terminal requires a press on the ENTER key as well).
 This will shorten or lengthen the high part of the clock pulse.
 
 In my first version, the program generated a 50-50 timed pulse
+
 ```cpp
   digitalWrite(CLOCK, LOW); wait(50); digitalWrite(CLOCK, HIGH); wait(50); // waits in %
 ```
-but I changed this to a 0-100 pulse (the 0 is not completely 0 because it is several nano ticks)
+
+but I changed this to a 0-100 pulse (the 0 is not completely 0 because it is still several Nano ticks)
+
 ```cpp
   digitalWrite(CLOCK, LOW); digitalWrite(CLOCK, HIGH); wait(100); // waits in %
 ```
+
 because the 6502 stops working when the low time is too long.
 
 With the current program the Nano can vary the clock from 100kHz to 0.06Hz:
 
-```
+```text
 Welcome to clockvar6502
 press + or - to speed up or slow down
 10+4096us, 243.55Hz
@@ -305,13 +262,50 @@ press + or - to speed up or slow down
 10+16777216us, 0.06Hz
 ```
 
-I especially like the 0.06Hz: 16 seconds per clock is really nice slow stepping.
-Would it be possible to single step with button presses?
+I especially like the 0.06Hz: 16 seconds per clock is really nice slow stepping. Would it be possible to single step with button presses?
 
-The above test was done with 6502 variant 2 (Rockwell). 
-Variant 1 (original MOS) still works at 7.63hz, but stops at 3.81Hz.
-Variant 3 (new MOS?) still works at 0.48Hz, but stops at 0.24Hz or 0.12Hz.
+The above test was done with the R65C02 (Rockwell). The MOS 6502 still works at 7.63hz, but stops at 3.81Hz. The other MOS still works at 0.48Hz, but stops at 0.24Hz or 0.12Hz.
 
+## 1.4. Clock - micro switch
 
+With the low frequency reached with the Nano, I decided to also check if manual pulsing (single stepping with button presses) is possible.
 
+As [Ben Eater](https://www.youtube.com/watch?v=81BgFhm2vz8) explains buttons have bounce, so a single press could cause multiple clock ticks. We don't want that; we need to debounce the signal. Ben uses an NE555 in mono-stable mode, I decide to use a Set/Reset latch (there are four of them in an [74279](https://www.aliexpress.com/item/32959185316.html) chip).
 
+![Schematic manual stepping](manual.jpg)
+
+Note that the 74279's control signals are low active, so the double throw switch has its common to ground and the NO (normally open) and NC (normally closed) pulled-high. Also note that the normally closed is connected to the latch, so that in idle position, the output (Q) is high. The reason for this is that the 6502 does not survive long _low_ periods of the clock.
+
+The above circuit replaces the Nano in the schematic of [1.3.1.](#131-Clock---Nano---wiring) and I have added LEDs on _all_ address pins. This is the resulting breadboard. The top-right shows the single-step micro switch circuit. The top-left shows NE555 based clocking circuit from the [next](#15-Clock---NE555) section.
+
+![Slow clock breadboard](slowclock.jpg)
+
+## 1.5. Clock - NE555
+
+Slow clocking is nice because we can see what is going on in detail, but pressing a button for every tick is tiresome. So, I created a square wave generator based on an NE555 (a so-called a-stable configuration). This is a copy of [Ben's](https://www.youtube.com/watch?v=kRlSFm519Bo) NE555 clock.
+
+![NE555 schematic](NE555.png)
+
+By varying the resistor value, the frequency can even be adapted. I will opt for an R_A of 1kΩ, and an R_B that varies from 1kΩ to 1MΩ (plus 1kΩ). Together with a capacitor of 2.2µF, this leads to a frequency range of 0.3Hz to over 200Hz.
+
+This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a dual pole switch to select between the two. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
+
+## 1.6. Triple clock module
+
+For my "end-product", I would like a 6502 computer with three clocks: manual (the micro switch single-step per press), variable (the NE555 with the potentiometer that regulates the frequency), and nominal (the canned 1MHz oscillator).
+
+The selector has three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). One latch at a time is set, indicating which of the three clock sources is selected. The output is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give state feedback to the user. This can be found on the left hand side of below schematics. One final detail, the three-pole switch (SWDFT) selects which state is default.
+
+![Clock schematic](clockselect.png)
+
+As said, of the three output lines, only one is set. This means that only one of the clock sources (MANCLK, VARCLK, NOMCLK) is selected by the three ANDs. Finally, the ORs send out a single CLOCK signal. I have attached a LEDCLOCK for monitoring.
+
+By the way, MANCLK is the output of the circuit in section [1.4.](#14-Clock---micro-switch), the VARCLKis the output of the circuit in section [1.5.](#15-Clock---NE555), and NOMCLK is the output of the canned oscillator, see section [1.2.](#12-Clock---oscillator). One final detail, the HALT signal (when high) disables CLOCK (again, in the high state, because otherwise the 6502 looses state). The idea is that a program, via a simple IO device can raise the HALT line and with that stop the CPU.
+
+Here is a prototype of my complete clock module.
+
+![Clock selector breadboard](clockselect.jpg)
+
+It might be wise to add a capacitor between the clock and VCC, just as we had with the canned oscillator and the Nano.
+
+(end of doc)
