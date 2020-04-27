@@ -288,13 +288,13 @@ Slow clocking is nice because we can see what is going on in detail, but pressin
 
 By varying the resistor value, the frequency can even be adapted. I will opt for an R_A of 1kΩ, and an R_B that varies from 1kΩ to 1MΩ (plus 1kΩ). Together with a capacitor of 2.2µF, this leads to a frequency range of 0.3Hz to over 200Hz.
 
-This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a dual pole switch to select between the two. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
+This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a double throw switch to select between the two. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
 
 ## 1.6. Triple clock module
 
 For my "end-product", I would like a 6502 computer with three clocks: manual (the micro switch single-step per press), variable (the NE555 with the potentiometer that regulates the frequency), and nominal (the canned 1MHz oscillator).
 
-The selector has three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). One latch at a time is set, indicating which of the three clock sources is selected. The output is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give state feedback to the user. This can be found on the left hand side of below schematics. One final detail, the three-pole switch (SWDFT) selects which state is default.
+The selector has three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). One latch at a time is set, indicating which of the three clock sources is selected. The output is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give state feedback to the user. This can be found on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is default.
 
 ![Clock schematic](clockselect.png)
 
