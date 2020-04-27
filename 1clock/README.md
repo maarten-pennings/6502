@@ -6,12 +6,11 @@ We need a clock, a source of pulses. There are several options. Remember that a 
 
 The hardest way is to [build](https://www.grappendorf.net/projects/6502-home-computer/clock-generation.html) your own oscillator based on a [crystal](https://www.aliexpress.com/item/32869213435.html). Tried. Works. Do not recommend.
 
-Much easier is to get a "[can](https://www.aliexpress.com/item/32887401548.html)" that presumably contains the crystal and the passives around it. The 1MHz versions are a bit hard to get. Works well. Do recommend.
+Much easier is to get a "[can](https://www.aliexpress.com/item/32887401548.html)" that presumably contains the crystal and the passives around it. The 1MHz versions are a bit hard to get. Works well. Easy. Stable. Do recommend.
 
-The third way is more the software approach: use an Arduino Nano to generate the clock. This is especially nice at the start of your project. You might already have it laying around. You do not need to order any other special components, and it gives you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the databus!
+The third way is more the software approach: use an Arduino Nano to generate the clock. This is especially nice at the start of your project. You might already have it laying around. You do not need to order any other special components, and it gives you a nice road to other experiments: let the Nano spy on the address bus, or even spoof the data bus!
 
-> **Terminology**  
-> An _oscillator_ is a circuit whose output oscillates. This output signal is used as a _clock_ for some circuit. Oscillators have three pins VCC, GND, OUT. The circuit is usually a feedback loop around a "frequency determining element" or _resonator_. The resonator can be a (quartz) crystal, which is accurate and relatively temperature independent. The resonator can also be a ceramic element rather than quartz; cheaper but less stable. Resonators have two wires.
+The next experiments are aimed at getting a slows clock: single stepping with a switch or slow but automatic stepping with an NE555.
 
 We will do the following experiments
 
@@ -23,6 +22,9 @@ We will do the following experiments
 - [1.6. Triple clock module](#16-Triple-clock-module) - A standard clock module
 
 ## 1.1. Clock - crystal
+
+> **Terminology**  
+> An _oscillator_ is a circuit whose output oscillates. This output signal is used as a _clock_ for some circuit. Oscillators have three pins VCC, GND, OUT. The circuit is usually a feedback loop around a "frequency determining element" or _resonator_. The resonator can be a (quartz) crystal, which is accurate and relatively temperature independent. The resonator can also be a ceramic element rather than quartz; cheaper but less stable. Resonators have two wires.
 
 We can build our own oscillator using a crystal as resonator.
 
@@ -69,7 +71,7 @@ Of course we hook up GND (twice!) and VCC. It seems wise to add some caps, close
 
 All input pins (I made them yellow in the schematic above) need to be connected (a common advise for chips). All signal pins (RDY, nIRQ, nNMI, nRES, nSO) are low-active (RDY is edge sensitive), so I hooked them via a pull-up to VCC. My pull-ups are 2k2Ω. The ϕ0 is the clock-input, we hook it to the oscillator (see [1.2.2.](#122-Clock---oscillator---clock-circuit)). The nRES not only has a pull-up, it is also hooked to the reset circuit (see below).
 
-> Sorry if I mix up ϕ and φ. I type these unicode characters in my text editor, but they come out swapped in my web browser... [ex1](unicode-chrome-windows-edit.png) [ex2](unicode-chrome-windows-view.png)
+> Sorry if I mix up ϕ and φ. I type these unicode characters in my text editor, but they come out swapped in my web browser... [ex1](unicode-chrome-windows-edit.png) [ex2](unicode-chrome-windows-view.png) [ex3](unicode-vscode-with-preview.png)
 
 A special category of input pins are the _data_ pins (D0..D7). I have wired them 1110 1010 or EA, which is the opcode for NOP. This means that the 6502 will always read NOP and will thus free run (spin around). See also [James Calvert](http://mysite.du.edu/~jcalvert/tech/6504.htm).
 
@@ -286,26 +288,25 @@ Slow clocking is nice because we can see what is going on in detail, but pressin
 
 ![NE555 schematic](NE555.png)
 
-By varying the resistor value, the frequency can even be adapted. I will opt for an R_A of 1kΩ, and an R_B that varies from 1kΩ to 1MΩ (plus 1kΩ). Together with a capacitor of 2.2µF, this leads to a frequency range of 0.3Hz to over 200Hz.
+By varying the resistor value, the frequency can be adapted. I will opt for an R_A of 1kΩ, and an R_B composed of a fixed R_B1 of 1kΩ and a potentiometer R_B2 of 1MΩ. Together with a capacitor of 2.2µF, this leads to a frequency range of 0.3Hz to over 200Hz (see the yellow note with computations in the above figure).
 
-This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a double throw switch to select between the two. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
+This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a double throw switch to select between the micro switch and the NE555 source. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
 
 ## 1.6. Triple clock module
 
 For my "end-product", I would like a 6502 computer with three clocks: manual (the micro switch single-step per press), variable (the NE555 with the potentiometer that regulates the frequency), and nominal (the canned 1MHz oscillator).
 
-The selector has three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). One latch at a time is set, indicating which of the three clock sources is selected. The output is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give state feedback to the user. This can be found on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is default.
+We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
 
 ![Clock schematic](clockselect.png)
 
-As said, of the three output lines, only one is set. This means that only one of the clock sources (MANCLK, VARCLK, NOMCLK) is selected by the three ANDs. Finally, the ORs send out a single CLOCK signal. I have attached a LEDCLOCK for monitoring.
+As said, of the three output lines, only one is set. This means that only one of the clock sources (MANCLK, VARCLK, NOMCLK) is passed on by the three ANDs. Finally, the ORs send out a single CLOCK signal. I have attached a LEDCLOCK for monitoring, and a capacitor to suppress spikes.
 
-By the way, MANCLK is the output of the circuit in section [1.4.](#14-Clock---micro-switch), the VARCLKis the output of the circuit in section [1.5.](#15-Clock---NE555), and NOMCLK is the output of the canned oscillator, see section [1.2.](#12-Clock---oscillator). One final detail, the HALT signal (when high) disables CLOCK (again, in the high state, because otherwise the 6502 looses state). The idea is that a program, via a simple IO device can raise the HALT line and with that stop the CPU.
+By the way, MANCLK is the output of the circuit in section [1.4](#14-Clock---micro-switch), the VARCLKis the output of the circuit in section [1.5](#15-Clock---NE555), and NOMCLK is the output of the canned oscillator, see section [1.2](#12-Clock---oscillator). One final detail, the HALT signal (when high) disables CLOCK (again, in the high state, because otherwise the 6502 looses state). The idea is that a program, via a simple IO device can raise the HALT line and with that stop itself.
 
 Here is a prototype of my complete clock module.
 
 ![Clock selector breadboard](clockselect.jpg)
 
-It might be wise to add a capacitor between the clock and VCC, just as we had with the canned oscillator and the Nano.
 
 (end of doc)
