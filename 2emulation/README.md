@@ -1,45 +1,37 @@
 # 2. Emulation
+
 Trying to build a 6502 based computer.
 
-We have (see [previous chapter](..\1clock)) a 6502 in free run: it executes NOP, NOP, NOP, ... and by inspecting
-the address lines (either having LEDs on the high lines, or using the scope on the low lines) we observe the addresses change.
+We have (see [previous chapter](..\1clock)) a 6502 in free run: it executes NOP, NOP, NOP, ... and by inspecting the address lines (either having LEDs on the high lines, or using the scope on the low lines) we observe the addresses change. But are we sure the 6502 is doing what we expect? Would be nice if we can check that.
 
-But are we sure the 6502 is doing what we expect? Is it really starting at address EAEA (the reset vector at FFFC and FFFD also 
-reads EA and EA) and then progressing to EAEB, EAEC? Would be nice if we can check that. 
-
-Then I had a nice idea: the Nano controls the clock, so it knows when the address bus is valid, can't the Nano snoop it?
-Can't we snoop (read) the data bus as well? Can't we _write_ the data bus? Yes, yes, and yes.
+Then I had a nice idea: the Nano controls the clock, so it knows when the address bus is valid, can't the Nano snoop the address bus? Can't we snoop (read) the data bus as well? Can't we _write_ the data bus? Yes, yes, and yes.
 
 We will do the following experiments
- - [2.1. Clock](README.md#21-Clock) - Use Nano as clock
- - [2.2. Address bus](README.md#22-Address-bus) - Use Nano to trace the address bus
- - [2.3. Jump loop](README.md#23-Jump-loop) - Test case: trace a JMP loop
- - [2.4. Data bus](README.md#24-Data-bus) - Use Nano to trace the data bus as well
- - [2.5. Interrupt (IRQ)](README.md#25-Interrupt-(IRQ)) - Test case: trace a single IRQ
- - [2.6. Emulate ROM](README.md#26-Emulate-ROM) - Use Nano to respond to data read requests
- - [2.7. Emulate RAM](README.md#27-Emulate-RAM) - Use Nano to also respond to data write requests
- - [2.8. Test IRQ](README.md#28-Test-IRQ) - Test case: trace IRQs
+
+- [2. Emulation](#2-emulation)
+  - [2.1. Clock](#21-clock)
+  - [2.2. Address bus](#22-address-bus)
+  - [2.3. Jump loop](#23-jump-loop)
+  - [2.4. Data bus](#24-data-bus)
+  - [2.5. Interrupt (IRQ)](#25-interrupt-irq)
+  - [2.6. Emulate ROM](#26-emulate-rom)
+  - [2.7. Emulate RAM](#27-emulate-ram)
+  - [2.8. Test IRQ](#28-test-irq)
+  - [2.9. Conclusion](#29-conclusion)
 
 ## 2.1. Clock
 
-The [first step](../1clock/README.md#13-clock---nano) was taken in the 
-previous chapter. We used a Nano as a clock source for the 6502. The address lines are dangling, the data lines are hardwired to EA 
-(the opcode of the NOP instruction). We had a very simple sketch that flips the clock line, and behold we had a 6502 
-"free" running at 160kHz.
+The [first step](../1clock/README.md#13-clock---nano) was taken in the previous chapter. We used a Nano as a clock source for the 6502. And that's all the Nano did. The address lines of the 6502 are dangling, the data lines of the 6502 are hardwired to EA (the opcode of the NOP instruction).
+
+The Nano runs a simple sketch that flips the clock line, and behold we have a 6502 "free" running at 160kHz.
 
 ## 2.2. Address bus
 
-With the first experiment, we believe the 6502 is executing NOPs. Can we check that? Can we check that it starts at EAEA 
-(the reset vector at FFFC and FFFD also reads EA and EA) and then progressing to EAEB, EAEC? Can we spy the address bus?
+With the first experiment, we believe the 6502 is executing NOPs. Can we check that? Can we check that it starts at EAEA (the reset vector at FFFC and FFFD also reads EA and EA) and then progressing to EAEB, EAEC? Can we spy (read) the _address_ bus?
 
-Since the Nano generates the clock, we know when we have to sample the address bus.
-Does the Nano have enough inputs? It seems to have D0..D13 so 14 lines.
-However D0 and D1 [double](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png) 
-as RXD and TXD and we need those two pins to send the trace to the PC (over USB). That leaves us with 12 lines, where 16 would be nice.
-From the [pinout](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png)
-we see that analog pins A0..A5 also have a double role, they can act as digital pins. That's 6 more digital pins. 
+Since the Nano generates the clock, we know when we have to sample the address bus. Does the Nano have enough inputs? It seems to have D0..D13 so 14 lines. However D0 and D1 [double](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png) as RXD and TXD and we need those two pins to send the trace to the PC (over USB). That leaves us with 12 lines, where 16 would be nice. From the [pinout](https://www.theengineeringprojects.com/wp-content/uploads/2018/06/introduction-to-arduino-nano-13-1.png) we see that analog pins A0..A5 also have a double role, they can act as digital pins. That's 6 more digital pins.
 
-In other words, we have 18 digital pins. We need 1 for clock and 16 for the address lines. Even one spare.
+In other words, we have 18 digital pins. We need 1 for clock and 16 for the address lines. Even one spare. Let's connect:
 
 ![Schematic of Nano spying on the address lines](nano-address.png)
 
@@ -47,8 +39,8 @@ The schematics above looks like this on my breadboard:
 
 ![Board of Nano spying on the address lines](nano-address.jpg)
 
-The program on the Nano, [AddrSpy6502](addrspy6502) is simple. The `loop()` pulses the clock, 
-reads all 16 address lines and prints them out in hex (with a time stamp).
+The program on the Nano, [AddrSpy6502](addrspy6502) is simple. The `loop()` pulses the clock, reads all 16 address lines and prints them out in hex (with a time stamp).
+
 ```cpp
 void loop() {
   // Send clock low
@@ -71,15 +63,16 @@ void loop() {
 ```
 
 This is the experiment I did.
+
 - I pressed the reset button of the Nano down, and with the same hand I pressed the reset button of the 6502 down.
-- I cleared the output of the Arduino terminal
+- I cleared the output of the Arduino terminal.
 - I released the reset of the Nano.
 - As soon as I saw the first output of the Nano, I released the reset of the 6502.
-- I disabled autoscroll in the terminal and copied the trace.
+- I disabled auto-scroll in the terminal and copied the trace.
 
-This was the trace (I manually added the `<- reset released`)
+This was the trace (I manually added the `<- reset released`).
 
-```
+```text
 Welcome to AddrSpy6502
       400us 3586
       828us 3586
@@ -116,16 +109,11 @@ Welcome to AddrSpy6502
 
 ```
 
-Note that the first ~400 000 us of the Nano trace, the 6502 was still in reset.
-It had a random pattern on the address bus, in this case 3586 (hex).
-Just before 409908us I released the reset of the 6502 (you can't see that, it's my guess).
+Note that the first ~400 000 us of the Nano trace, the 6502 was still in reset. It had a random value on the address bus, in this case 3586 (hex). Just before 409908us I released the reset of the 6502 (you can't see that, it's my guess).
 
-What we see on the address bus after reset can be found in the 6502 datasheet, but is also very well explained
-on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3).
-There are 7 clock ticks before our program starts: first two internal `[I]` ticks, 
-then three stack `[S]` ticks, and finally two vectored `[V]` jump ticks:
+What we see on the address bus after reset can be found in the 6502 datasheet, but is also very well explained on the [6502.org site](http://www.6502.org/tutorials/interrupts.html#1.3). There are 7 clock ticks before our program starts: first two internal `[I]` ticks, then three stack `[S]` ticks, and finally two vectored `[V]` jump ticks:
 
-```
+```text
                  // 6502 reset released
    409908us 3586 // (1) [I] first internal administrative operation of 6502
    411440us 3586 // (2) [I] second internal operation
@@ -134,75 +122,62 @@ then three stack `[S]` ticks, and finally two vectored `[V]` jump ticks:
    416028us 01ec // (5) [S] push the processor status word (PSW) on stack, decrement stack pointer S (was EC)
    417556us fffc // (6) [V] get PCL from reset vector (FFFC), presumably reads EA
    419088us fffd // (7) [V] get PCH from reset vector (FFFD), presumably reads EA
-   420620us eaea // Fetches 1st instruction (NOP) - after jump via reset vector, indeed EAEA. 
+   420620us eaea // Fetches 1st instruction (NOP) - after jump via reset vector, indeed EAEA.
    422148us eaeb // Executes 1st instruction (NOP)
    423680us eaeb // Fetches  2nd instruction (NOP)
    425208us eaec // Executes 2nd instruction (NOP)
    426740us eaec // Fetches  3rd instruction (NOP)
 ```
 
-Some notes
- - All three interrupts, NMI with vector at FFFA, RESET with vector at FFFC and IRQ with vector at FFFE
-   have the same 7-clock interrupt sequence. 
- - One exception: for RESET the three pushes are fake: the 6502 issues a _read_ to the memory instead of a _write_.
- - The stack pointer (S) has a random value after reset, in the above run it happened to be EE.
-   The stack page is hardwired to 01 on the 6502 (0100-01FF).
- - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
- - It seems like the first NOP takes only 1 cycle; the `eaeb` appears only once on the address bus. I think at 420620us 
-   the NOP instruction is fetched from `eaea`. It is decoded, and executed in the second tick (422148us). But
-   during the second tick the address bus is already eaeb. During the third tick (423680us) a NOP is fetched from `eaeb`
- - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
+Some notes:
 
+- All three interrupts, NMI with vector at FFFA, RESET with vector at FFFC and IRQ with vector at FFFE have the same 7-clock interrupt sequence.
+- One exception: for RESET the three pushes are fake: the 6502 issues a _read_ to the stack memory instead of a _write_.
+- The stack pointer (S) has a random value after reset, in the above run it happened to be EE. The stack _page_ (high byte) is hardwired to 01 on the 6502 (0100-01FF).
+- The stack operation are pushes (which are patched to read instead of write), and on the 6502 the stack grows downwards. So, the stack access is on 01EE, 01ED, and 01EC.
+- We see the vector load at FFFC and FFFD.
+- We see the first instruction at EAEA (since all memory location contain EA, so do the vector addresses at FFFC and FFFD).
+- A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
+- It might seem like the first NOP takes only 1 cycle; the `eaea` appears only once on the address bus. However, I think at 420620us the NOP instruction is fetched from `eaea`. It is decoded, and executed in the second tick (422148us). But during the second tick the address bus is already at `eaeb`. During the third tick (423680us) a NOP is fetched from `eaeb`.
+- The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
 
 ## 2.3. Jump loop
 
-The previous experiment is a success: we see the address lines increment nicely (in steps of two)
-and also the reset behavior is as documented. Still, it would be nice to have a more realistic program;
-a series of NOPs is not very convincing.
+The previous experiment is a success: we see the address lines increment nicely (in steps of two) and also the reset behavior is as documented. Still, it would be nice to have a more realistic program; a series of NOPs is not very convincing.
 
-However, without a memory to store our program, we are limited in our possibilities.
-There is one way out: go old style. Write a program in _hardware_.
+However, without a memory to store our program, we are limited in our possibilities. There is one way out: go old style. Write a program in _hardware_.
 
-I got the idea from [James Calvert's tight loop](http://mysite.du.edu/~jcalvert/tech/6504.htm).
-We make some logic that emulates an 8 byte program.
-We NOR together the first three address lines to create the "v-signal".
-The v-signal is bound to D2, D3 and D6, the other data lines (D0, D1, D4, D5 and D7) are bound to GND.
-So, the data bus is 0b 0v00 vv00. This means that 
- - if v=0 then D = 0b 0000 0000 = 0x00
- - if v=1 then D = 0b 0100 1100 = 0x4C
+I got the idea from [James Calvert's tight loop](http://mysite.du.edu/~jcalvert/tech/6504.htm). We make some logic (in hardware)  that emulates an 8 byte program. We NOR together the first three address lines to create the, let's call it, "v-signal". The v-signal is bound to D2, D3 and D6 of the 6502, the other data lines (D0, D1, D4, D5 and D7) are bound to GND. So, the data bus is wired to `0b 0v00 vv00` depending on the value of v. This means that
+
+- if v=0 then D = 0b 0000 0000 = 0x00
+- if v=1 then D = 0b 0100 1100 = 0x4C
 
 For the various addresses, that gives the following data reads:
 
-  | address (hex) | address (bin) | v-signal| data |
-  |:-------------:|:-------------:|:-------:|:----:|
-  |     ...       |       ...     |         |      |
-  |     FFFC      |    ... 100    |    0    |  00  | 
-  |     FFFD      |    ... 101    |    0    |  00  |
-  |     FFFE      |    ... 110    |    0    |  00  |
-  |     FFFF      |    ... 111    |    0    |  00  |
-  |     0000      |    ... 000    |    1    |  4C  |
-  |     0001      |    ... 001    |    0    |  00  |
-  |     0002      |    ... 010    |    0    |  00  |
-  |     0003      |    ... 011    |    0    |  00  |
-  |     ...       |       ...     |         |      |
+| address (hex) | address (bin) | v-signal| data | comment             |
+|:-------------:|:-------------:|:-------:|:----:|:-------------------:|
+|     FFFC      |    ... 100    |    0    |  00  | RST vector 00**00** |
+|     FFFD      |    ... 101    |    0    |  00  | RST vector **00**00 |
+|     FFFE      |    ... 110    |    0    |  00  | (don't care)        |
+|     FFFF      |    ... 111    |    0    |  00  | (don't care)        |
+|     0000      |    ... 000    |    1    |  4C  | **JMP** 0000        |
+|     0001      |    ... 001    |    0    |  00  | JMP **00**00        |
+|     0002      |    ... 010    |    0    |  00  | JMP 00**00**        |
+|     0003      |    ... 011    |    0    |  00  | (don't care)        |
 
-In other words, at FFFC, the 6502 reads the start address 00 00, and at 0000 the 6502 reads 4C 00 00.
-Note that 4C 00 00 means JMP 0000, since 4C is the opcode for JMP abs.
+In other words, at FFFC, the 6502 reads the start address 00 00, and at 0000 the 6502 reads 4C 00 00. Note that 4C 00 00 means JMP 0000, since 4C is the opcode for JMP abs.
 
-This the schematic
+How do we implement this in hardware? This the schematic:
 
 ![nano-jmp.png](nano-jmp.png)
 
-Here is a photo of my board. Note the _triple OR_ (4075) and the _hex inverter_ (7404) chips on the right.
-Also note the three blue wires coming in (from A0, A1, A2) and the blue wire going out (to D2, d3 and D6).
+Here is a photo of my board. Note the _triple OR_ (4075) and the _hex inverter_ (7404) chips on the right. Also note the three blue wires coming in (from A0, A1, A2) and the blue wire going out (to D2, d3 and D6).
 
 ![nano-jmp.jpg](nano-jmp.jpg)
 
-With the same [sketch](addrspy6502) as the previous experiment, let's make a trace again.
-We repeat our manual steps: Nano reset down, 6502 reset down, Nano reset up, wait for output, 6502 reset up.
-This is the trace (I manually added the `<- reset released`) 
+With the same [sketch](addrspy6502) as the previous experiment, let's make a trace again. We repeat our manual steps: Nano reset down, 6502 reset down, Nano reset up, wait for output, 6502 reset up. This is the trace (I manually added the `<- reset released` again):
 
-```
+```text
 Welcome to AddrSpy6502
       400us 0001
       820us 0001
@@ -233,52 +208,44 @@ Welcome to AddrSpy6502
 ```
 
 Some notes
- - Before 270680us the reset is released (can't see that from the trace). 
- - We see the two internal administrative operations
- - We see the (fake) push of PCH, PCL, PSW.
-   The stack pointer S now starts at FA, so pushes to 01FA, 01F9 and 01F8.
- - We see the reset vector load (FFFC, FFFD)
- - We see the load of 0000 (this confirms that FFFC and FFFD read 00 00)
- - We see the load of 0001, 0002
- - We see the load of 0000 again, which hints that JMP 0000 was executed
- - One clock is still about 1500us (0.7kHz)
 
+- Just before 270680us the reset is released (can't see that from the trace).
+- We see the two internal administrative operations.
+- We see the (fake) push of PCH, PCL, PSW. The stack pointer S now starts at FA, so pushes to 1FA, 01F9 and 01F8.
+- We see the reset vector load (FFFC, FFFD).
+- At 281388us, we see the load of 0000 (this confirms that FFFC and FFFD read 00 00).
+- We see the load of 0001, 0002.
+- We see the load of 0000 again, which suggests that JMP 0000 was executed.
+- One clock period is still about 1500us (0.7kHz)
 
 ## 2.4. Data bus
 
-In the notes on the previous experiment, we have "load of 0000 (this confirms that FFFC and FFFD read 00 00)".
-Wouldn't it be nice if we could not only see the _address_ bus, but also the _data_ bus?
-We can, but we loose details on the address bus.
+In the notes on the previous experiment, we have "load of 0000 (this confirms that FFFC and FFFD read 00 00)". Wouldn't it be nice if we could not only see the _address_ bus, but also the _data_ bus? We can, but we loose details on the address bus.
 
 Recall that we have Nano D2 for the 6502 ϕ0 (clock), and Nano D4..D13 plus A0..A5 for 6502 A0..A15.
-This leaves Nano D3, A6 and A7 free.
-Let's redesign.
+This leaves Nano D3, A6 and A7 free. Let's redesign;
 
- - Leave Nano D2 to R6502 ϕ0 (clock).
- - Connect Nano D3 to R6502 R/nW so that we can trace if the 6502 did a read or a write on the data bus.
- - Use Nano D4..D11 for 6502 data bus D0..D7. Full data trace.
- - Use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
+- Leave Nano D2 to R6502 ϕ0 (clock).
+- Connect Nano D3 to R6502 R/nW so that we can trace if the 6502 did a read or a write on the data bus.
+- Use Nano D4..D11 for 6502 data bus D0..D7. Full data trace.
+- Use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
 
-![Nano with clock and data](nano-data.png)
+![Nano with clock, address and data](nano-data.png)
 
 Find below my breadboard version. I still have the JMP loop circuit (3-input OR with inverter) on the right.
 
 ![Nano with clock and data](nano-data.jpg)
 
-There is one problem with this wiring: Nano A6 and A7 are analog only.
-We cannot use `digitalRead()` on those pins.
-We can however read them in an analog fashion by using `analogRead()` and comparing the result with half the 
-maximum analog readout: 1024/2.
-The drawback is that `analogRead()` is [slow](https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/):
+There is one problem with this wiring: Nano A6 and A7 are analog only. We cannot use `digitalRead()` on those pins. We can however read them in an analog fashion by using `analogRead()` and comparing the result with half the maximum analog readout: 1024/2. The drawback is that `analogRead()` is [slow](https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/):
 
-> On ATmega based boards (UNO, Nano, Mini, Mega), it takes about 100 microseconds (0.0001 s) 
-> to read an analog input, so the maximum reading rate is about 10,000 times a second.
+> On ATmega based boards (UNO, Nano, Mini, Mega), it takes about 100 microseconds (0.0001 s) to read an analog input, so the maximum reading rate is about 10,000 times a second.
 
 We prefer to use 10 bits, because this means we have 4 pages (a 6502 page is 256 bytes):
- - page 0, for well, zero-page addressing of the 6502
- - page 1, for the stack (hardwired on page 1 by the 6502)
- - page 2, for the code
- - page 3, for the interrupt vectors (hardwired to FFFx by the 6502)
+
+- Page 0, for well, zero-page addressing of the 6502.
+- Page 1, for the stack (hardwired on page 1 by the 6502).
+- Page 2, for the code.
+- Page 3, for the interrupt vectors (hardwired to FFFx by the 6502).
 
 The result is a memory map with 4 pages of each 256 bytes (so 1kB in total), that is mirrored 64 times:
 
@@ -316,9 +283,9 @@ void loop() {
 }
 ```
 
-The results are great. We made a trace in the same way as before
+The results are great. We made a trace of the JMP 0000 program in the same way as before (just after reset):
 
-```
+```text
 Welcome to AddrDataSpy6502
       752us 002 1 00
      1504us 002 1 00
@@ -344,57 +311,48 @@ Welcome to AddrDataSpy6502
    406904us 002 1 00
 ```
 
- - Since we capture only 10 address lines, we only print 3 nibbles
- - The first nible of the address bus is only 0, 1, 2 or 3 (we only capture 2 bits in this nibble).
- - Since we still have the JMP loop wired, all bytes are read as 00 except at location 0000, there it reads 4C.
- - The three push instructions (01fd, 01fc, 01fb) are indeed fake: they read instead of write (R/nW flag is 1).
- - One clock is now just below 2000us (0.5kHz).
-
+- Since we capture only 10 address lines, we only print 3 nibbles.
+- The first nibble of the address bus is only 0, 1, 2 or 3 (we only capture 2 bits in this nibble).
+- Since we still have the JMP loop wired, all accessed memory locations read as 00 except location 0000, which reads 4C.
+- The three push instructions (01fd, 01fc, 01fb) are indeed fake: they _read_ instead of _write_ (R/nW flag is 1 - do we trust that, it's always 1).
+- One clock period is now just below 2000us (0.5kHz).
 
 ## 2.5. Interrupt (IRQ)
 
-We should be able to generate an interrupt.
-The IRQ line on the board is pulled up, so if we add a wire and touch the GND signal, we should get an interrupt.
+We should be able to generate an interrupt. The IRQ line on the board is pulled up, so if we add a wire and touch the GND signal, we should get an interrupt.
 
-> Intermezzo on interrupts
+> **Intermezzo on interrupts**
 >
-> The 6502 IRQ line is not edge but level sensitive: a low level causes an interrupt.
-> The IRQ line is sampled at the end of each instruction.
+> The 6502 IRQ line is not _edge_ but _level_ sensitive: a low level causes an interrupt.
+> The IRQ line is sampled at the end of each instruction. There are three possible cases.
 >
-> If the line is high, no interrupt request is pending and the 6502 runs the next instruction
-> till completion before it samples the IRQ line again.
+> (1) If the line is _high_, no interrupt request is pending and the 6502 runs the next
+> instruction till completion, before it samples the IRQ line again.
 >
-> If the IRQ line is low, an interrupt request is pending. If the I flag ("IRQ-disable") in 
-> the program status word is 1, the interrupt is not taken; the 6502 runs the next instruction
-> till completion before it samples the IRQ line (and I flag) again.
+> (2) If the IRQ line is _low_, an interrupt request is pending.
+> If the I flag ("IRQ-disable") in the program status word is _set_, the interrupt is not taken;
+> the 6502 runs the next instruction till completion before it samples the IRQ line (and I flag) again.
 >
-> If the IRQ line is low and the I flag is 0, the interrupt sequence will be initiated. 
-> The Program Counter (PC, high and low byte) and the Processor Status Word (PSW) are pushed 
-> onto the stack and the IRQ-disable flag (I) is set to a 1 disabling further interrupts.
+> (3) If the IRQ line is _low_ and the I flag is _clear_, the interrupt sequence will be initiated.
+> The Program Counter (PC, high and low byte) and the Processor Status Word (PSW) are pushed
+> onto the stack and the IRQ-disable flag (I) is _set_ disabling further interrupts.
 > The Program Counter Low is loaded from FFFE and the Program Counter High from FFFF.
 > The vector at FFFE/FFFF points to the start of the so-called Interrupt Service Routine (ISR),
 > which thus now starts to execute.
 >
 > The ISR should do the proper action for the interrupt, but also some administrative work:
-> it should signal the device that pulled the IRQ line low, that it is serviced, so 
-> that it will let the IRQ line go high again. The ISR ends with a Return from Interrupt (RTI) 
-> instruction. This restores the I flag (back to 0) and a new interrupts can be handled. 
-> If the (I) flag is cleared inside the ISR routine, nested interrupts can occur. 
+> it should signal the device that pulled the IRQ line low, that it is serviced, so
+> that it will let the IRQ line go high again. The ISR ends with a Return from Interrupt (RTI)
+> instruction. This restores the I flag (clearing it) and a new interrupts can be handled.
+> If the (I) flag is cleared inside the ISR routine, nested interrupts can occur.
 
-So, if we pull IRQ low for a moment, the ISR will be executed (by default I=0).
-This means the the main program (the JMP loop at 0000) is pre-empted and that the 6502 
-will start executing ... 0000 (because FFFE and FFFF both store 00). 
+So, if we pull IRQ low for a moment, the ISR will be executed (assuming I=0). This means the the main program (the JMP loop at 0000) is pre-empted and that the 6502 will start executing ... 0000 (because FFFE and FFFF both store 00).
 
-We will see the interrupt sequnce!
-Another interesting observation is that our ISR never returns.
-It loops back to 0000 and never executes a RTI.
-So after the first interrupt I=1, and no new interrupts will be serviced.
-That is, till the next RESET.
+We will see the interrupt sequence! Another interesting observation is that our ISR never returns. It loops back to 0000 and never executes a RTI. So after the first interrupt I=1, and no new interrupts will be serviced. That is, till the next RESET.
 
-Let's give it a try. Lets run the [tracer](addrdataspy6502) and short circuit
-the nIRQ line of the 6502 with GND for a brief moment.
+Let's give it a try. Lets run the [tracer](addrdataspy6502) and short circuit the nIRQ line of the 6502 with GND for a brief moment.
 
-```
+```text
  62728408us 000 1 4c
  62730280us 001 1 00
  62732136us 002 1 00
@@ -416,31 +374,27 @@ the nIRQ line of the 6502 with GND for a brief moment.
  62762056us 002 1 00
 ```
 
- - We see the 6502 looping JMP 0000 call
- - At 62737744us there is the IRQ (you can not see that from this line)
- - We have the two internal cycles
- - We have the 3 pushes (to 100, 1ff, 1fe)
- - Note the the 3 pushes indeed have the R/nW flag being 0 (first time, jaayy)
- - We have a read from 3fe (FFFE) and 3ff (FFFF), remember we capture only 12 address bits 
- - Next, the program counter switches to 000
- - A second touch of the wire did not cause a second FFFE/FFFF lookup.
- - I think we were lucky: we started with I=0. I now believe that a reset does not guarantee this.
+- We see the 6502 looping JMP 0000 calls (e.g. at 62728408us and another at 62730280us).
+- At 62737744us there is the IRQ (you can not see that from this line).
+- We have the two internal cycles.
+- We have the 3 pushes (to 100, 1ff, 1fe).
+- Note the the 3 pushes indeed have the R/nW flag 0 (first time, jaayy)
+- We have a read from 3fe (FFFE) and 3ff (FFFF), the IRQ vector (remember we capture only 12 address bits).
+- Next, the program counter switches to 000.
+- A second touch of the wire did not cause a second FFFE/FFFF lookup (presumably because I is now set).
+- I think we were lucky: we started with I cleared. I now believe that a 6502 reset does not guarantee this.
 
 Success, interrupt fully matches our model.
 
-
 ## 2.6. Emulate ROM
 
-The Nano now controls the clock of the 6502, but it also reads the (well, most) address lines.
-And it is connected to the data lines. What prevents us from writing a sketch that has a 1k array (remember we
-capture 10 address lines which can address 1024 locations), indexes that array with the received address, 
-retrieves the byte at that location, and write the value of that byte to the data lines?
+The Nano now controls the clock of the 6502, but it also reads the (well, most) address lines. And it is connected to the data lines. What prevents us from writing a sketch that has a 1k array (remember we capture 10 address lines which can address 1024 locations), indexes that array with the received address, retrieves the byte at that location, and write the value of that byte to the data lines?
 
 Nothing. This basically implements a ROM.
 
-Since the Nano now writes to the data lines in addition to the 6502, there is a risky situation: if one 
-writes 0 and the other writes 1, we get a short circuit. So I decided to add (1k) resistors on the line.
-A 5V short then causes a 5mA current. Hope both chips can handle that. A 10k was too high for me.
+Just a ROM for now, in the [next section](#27-Emulate-RAM) we go one step further and emulate RAM too.
+
+Since the Nano now writes to the data lines in addition to the 6502, there is a risky situation: if one writes 0 and the other writes 1, we get a short circuit. So I decided to add (1k) resistors on the line. A 5V short then causes a 5mA current. Hope both chips can handle that. A 10k felt too high for me.
 
 ![The Nano as ROM (schematics)](nano-rom.png)
 
@@ -509,10 +463,7 @@ void load() {
 }
 ```
 
-In case you wonder where this code is coming from.
-I wrote a simple assembler program that constantly increments X and stores it on location 155
-(not wise, since that is in the stack area, but hey, we use no stack).
-This is the assembler code
+In case you wonder where this code is coming from. I wrote a simple assembler program that constantly increments X and stores it on location 155 (not wise, since that is in the stack area, but hey, we don't need stack right now). This is the assembler code.
 
 ```asm
 * = $0200
@@ -525,9 +476,9 @@ This is the assembler code
 I used the [on-line 6502 compiler](https://www.masswerk.at/6502/assembler.html) to get the opcodes.
 Do not forget the reset vector at 3fc and 3fd.
 
-This is the trace
+This is the trace (the `<-` comments are from me)
 
-```
+```text
 Welcome to Rom6502
      1132us 206 1 4c
      1892us 206 1 4c
@@ -568,24 +519,19 @@ Welcome to Rom6502
 ```
 
 - After reset, the 6502 jumps to main at 200.
-- It executes the `LDX #$00` and then moves to the start of the loop.
-- In the loop, it increments X `INX` or `E8`
-- Then executes the store of X to 155 `STX $0155` which takes four ticks `8E 8E 55 01`
-- The 6502 attempts to write (R/nW is 0) but our "ROM" (the Nano) does ignore this. 
-  The Nano actually writes `EA` causing the dreaded short circuit (but we are rescued by the resistors).
-- Finally there is the jump to loop `JMP 0202`.
+- It executes the `LDX #$00` (A2 00) and then moves to the start of the loop.
+- In the loop, it increments X `INX` (E8).
+- Then executes the store of X to 155 `STX $0155` which takes four ticks 8E 8E 55 01.
+- In the next clock tick, the 6502 attempts to write. We see address 155 and R/nW at 0 (write). However, our "ROM" (the Nano) ignores the write request. The Nano actually writes `EA` itself, causing the dreaded short circuit (but we are rescued by the resistors).
+- Finally there is the jump to loop `JMP 0202` (4C 02 02).
 
+Let's support writing.
 
 ## 2.7. Emulate RAM
 
-In the previous section we implemented a ROM: the 6502 could _read_ bytes.
-Those bytes come from a memory array inside the Nano.
+In the previous section we implemented a ROM: the 6502 could _read_ bytes. Those bytes come from a memory array inside the Nano. In this section we will extend the Nano firmware. It will accept _writes_ from the 6502; the written bytes will be written to memory array inside the Nano.
 
-In this section we will extend the Nano firmware.
-It will accept _writes_ from the 6502; the written bytes will be written to memory array inside the Nano.
-
-The schematics and breadboard do not change; it is just the firmware inside the Nano.
-This is the important part:
+The schematics and breadboard do not change; it is just the firmware [ram6502](ram6502) inside the Nano . This is the important part:
 
 ```cpp
 void loop() {
@@ -622,28 +568,65 @@ void loop() {
 }
 ```
 
-Those who have been following my experiments might notice that I'm not consistent with the 
-placement of the clock changes `digitalWrite(PIN_CLOCK,LOW)` and `digitalWrite(PIN_CLOCK,HIGH)`.
-The truth is, I do not fully understand what the relation is between the clock edges and 
-the moments to read the address, R/nW line, or access the data lines.
+Those who have been following my experiments might notice that I'm not consistent with the placement of the clock changes `digitalWrite(PIN_CLOCK,LOW)` and `digitalWrite(PIN_CLOCK,HIGH)`. The truth is, I do not fully understand what the relation is between the clock edges and the moments to read the address, R/nW line, or access the data lines (see [chapter 4](../4ram/README.md) where I studied this in more detail).
+
+I wrote a program that really uses RAM (zero page location 33):
+
+```asm
+0200        LDA #$00        A9 00
+0202        STA *$33        85 33
+0204 LOOP
+0204        INC *$33        E6 33
+0206        JMP LOOP        4C 04 02
+```
+
+The `load()` routine in Arduino sketch is thus (again, remember to set the reset vector):
+
+```cpp
+void load() {
+  // Fill entire memory with NOP
+  for(int i=0; i<1024; i++ ) mem[i]=0xEA; // NOP
+
+  // RAM is preloaded with a simple programm
+  //   https://www.masswerk.at/6502/assembler.html
+  // * = $0200
+  mem[0x3fc]= 0x00;
+  mem[0x3fd]= 0x02;
+  // 0200        LDA #$00        A9 00
+  mem[0x200]= 0xA9;
+  mem[0x201]= 0x00;
+  // 0202        STA *$33        85 33
+  mem[0x202]= 0x85;
+  mem[0x203]= 0x33;
+  // 0204 LOOP
+  // 0204        INC *$33        E6 33
+  mem[0x204]= 0xE6;
+  mem[0x205]= 0x33;
+  // 0206        JMP LOOP        4C 04 02
+  mem[0x206]= 0x4C;
+  mem[0x207]= 0x04;
+  mem[0x208]= 0x02;
+}
+```
 
 This is the trace:
 
-```
+```text
 Welcome to Ram6502
 Memory loaded
      1248us 314 1 ea
      2048us 001 1 ea
      2848us 001 1 ea
+     ...
    394464us 001 1 ea    <- RESET
-   396324us 001 1 ea    // Internal 
-   398200us 001 1 ea    // Internal 
+   396324us 001 1 ea    // Internal
+   398200us 001 1 ea    // Internal
    400072us 100 1 ea    // Push PCH
    401928us 1ff 1 ea    // Push PCL
    403808us 1fe 1 ea    // Push PSW
    405680us 3fc 1 00    // LD PCL
    407536us 3fd 1 02    // LD PCH
-   409408us 200 1 a9 // LDA #$00 
+   409408us 200 1 a9 // LDA #$00
    411280us 201 1 00
    413160us 202 1 85 // STA *$33
    415032us 203 1 33
@@ -651,15 +634,15 @@ Memory loaded
    418760us 204 1 e6 // INC *$33
    420640us 205 1 33
    422496us 033 1 00    <- gets 0 from 33
-   424368us 033 1 00 
+   424368us 033 1 00
    426240us 033 0 01    <- store 1 in 33
    428124us 206 1 4c // JMP 0204
-   429976us 207 1 04 
+   429976us 207 1 04
    431848us 208 1 02
    433720us 204 1 e6 // INC *$33
-   435600us 205 1 33 
+   435600us 205 1 33
    437472us 033 1 01    <- gets 1 from 33
-   439332us 033 1 01 
+   439332us 033 1 01
    441200us 033 0 02    <- store 2 in 33
    443080us 206 1 4c
    444936us 207 1 04
@@ -670,21 +653,13 @@ The clock steps are still 2000us or 0.5kHz.
 
 ## 2.8. Test IRQ
 
-Now that we have RAM operational, we can really test interrupts.
-We did that before (by grounding nIRQ), but we could do that only one time (after reset).
-The reason is that as part of the IRQ handling (the 7 steps of interrupt handling), the 6502 automatically 
-sets the I flag (also known as IRQ-disable flag) to 1. From that moment on, IRQs are disabled.
+Now that we have RAM operational, we can really test interrupts. We did that before (by grounding nIRQ), but we could do that only one time (after reset). The reason is that as part of the IRQ handling (the 7 steps of interrupt handling), the 6502 automatically sets the I flag (also known as IRQ-disable flag) to 1. From that moment on, IRQs are disabled.
 
-The I flag is cleared by the `RTI` instruction, since that pops the old PSW register (which contains the I flag). 
-Now that we have RAM emulation, the push of PSW is operational, so the pop of PSW is effective.
+The I flag is cleared by the `RTI` instruction, since that pops the old PSW register (which contains the I flag). Now that we have RAM emulation, the push of PSW is operational, so the pop of PSW is effective.
 
-The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with two exceptions.
-The `mem[]` array is loaded with a different "program" for the 6502. And we have added a `mem_dump()` routine that is 
-called from `setup()` so that we can check the `mem[]` array is correctly initialized.
+The new Nano sketch [ramirq6502](ramirq6502) is identical to the previous [ram6502](ram6502) with two exceptions. The `mem[]` array is loaded with a different "program" for the 6502. And we have added a `mem_dump()` routine that is called from `setup()` so that we can check the `mem[]` array is correctly initialized.
 
-The core of the change is the new 6502 "program".
-There are two functions `main` and `isr`. 
-The `main` gets executed from the reset vector.
+The core of the change is the new 6502 "program". There are two functions `main` and `isr`. The `main` gets executed from the reset vector.
 
 ```asm
 * = $0200
@@ -693,19 +668,14 @@ The `main` gets executed from the reset vector.
 0201        LDA #$00        A9 00
 0203        STA *$33        85 33
 0205        STA *$44        85 44
-0207 LOOP   
+0207 LOOP
 0207        INC *$33        E6 33
 0209        JMP LOOP        4C 07 02
 ```
 
 Function `main` has a `loop` that increments zero page location 33.
 
-Before the loop, `main` initializes zero page location 33 to 00.
-It has two other initilazations: zeroing page location 44 to 00, and enabling of interupts (`CLI`).
-The enabling of interrupts allows the second function `isr` to be called when grounding the nIRQ line.
-The `isr` increments zero page location 44.
-
-The function `isr` gets executed from the irq vector.
+Before the loop, `main` initializes zero page location 33 to 00. It has two other initializations: zeroing page location 44 to 00, and enabling of interrupts (`CLI`). The enabling of interrupts allows the second function `isr` to be called when grounding the nIRQ line. The `isr` routine increments zero page location 44. The function `isr` is not called from `main`, it gets executed from the irq vector.
 
 ```asm
 * = $0300
@@ -714,12 +684,11 @@ The function `isr` gets executed from the irq vector.
 0302        RTI             40
 ```
 
-The opcodes of both functions are written to the `mem[]` array in `mem_load()`.
-Do not forget that `mem_load()` should initialize `mem[]` locations fffc/fffd (reset) and fffe/ffff (irq) as well.
+The opcodes of both functions are written to the `mem[]` array in `mem_load()`. Do not forget that `mem_load()` should initialize `mem[]` locations fffc/fffd (reset) and fffe/ffff (irq) as well.
 
 This is the annotated trace (note the `mem` dump at the top).
 
-```
+```text
 Welcome to RamIrq6502
 200: 58 a9 00 85 33 85 44 e6 33 4c 07 02 ea ea ea ea
 300: e6 44 40 ea ea ea ea ea ea ea ea ea ea ea ea ea
@@ -757,9 +726,9 @@ Memory loaded
    337416us 20a 1 07
    339296us 20b 1 02
    341152us 207 1 e6 <- loop
-   343024us 208 1 33 
-   344896us 033 1 01 
-   346776us 033 1 01 
+   343024us 208 1 33
+   344896us 033 1 01
+   346776us 033 1 01
    348632us 033 0 02 <- update 33
    350504us 209 1 4c
    352376us 20a 1 07
@@ -775,7 +744,7 @@ Memory loaded
   1754888us 033 0 60 <- IRQ (when PC=209)
   1756744us 209 1 4c    // internal
   1758616us 209 1 4c    // internal
-  1760496us 136 0 02    // push PCH 
+  1760496us 136 0 02    // push PCH
   1762372us 135 0 09    // push PCL
   1764224us 134 0 60    // push PSW
   1766096us 3fe 1 00    // LD PCL
@@ -786,29 +755,45 @@ Memory loaded
   1775456us 044 1 00
   1777328us 044 0 01 <- update 44
   1779184us 302 1 40 <- RTI
-  1781064us 303 1 ea    //
-  1782936us 133 1 ea    // 
+  1781064us 303 1 ea    // internal
+  1782936us 133 1 ea    // internal
   1784808us 134 1 60    // pop PSW
   1786664us 135 1 09    // pop PCL
   1788536us 136 1 02    // pop PCH
-  1790416us 209 1 4c <- back in main 
+  1790416us 209 1 4c <- back in main
   1792288us 20a 1 07
   1794148us 20b 1 02
   1796016us 207 1 e6 <- loop
-  1797896us 208 1 33 
-  1799768us 033 1 60 
-  1801624us 033 1 60 
+  1797896us 208 1 33
+  1799768us 033 1 60
+  1801624us 033 1 60
   1803496us 033 0 61 <- update 33
   1805380us 209 1 4c
   1807248us 20a 1 07
   1809104us 20b 1 02
 ```
 
+The 6502 uses a _post decrement_ for stack pushes. In other words S points at the "first free" location just beyond the "top" of the stack. But also, the stack grows downwards. A typical initial value for S would be FF:
+
+![Stack behavior](stack.png)
+
+With that in mind let's have a look at the trace
+
+- The first instruction of `main` clears the interrupt disable flag `CLI`, enabling interrupts.
+- It would have been wise to initialize the stack pointer. A typical initialization is `LDX #$ff` followed by `TXS`.
+- We see the by now understood 7 step reset sequence. Note that the stack pointer S starts off at 39, and there are three (fake) pushes (to 139, 138, 137) so S is 36 after reset. See figure below.
+- When the IRQ comes in we see similar 7 steps. Note that indeed PCH is now pushed at 136, PCL at 135,and PSW at 134 (so that S is now 33, see figure below).
+- The PC is now loaded from the vector FFFE and FFFF (3FE/3FF in our 10 bit trace).
+- This executes the ISR at 300, which increments zero page location 44 to 1.
+- The RTI instruction is then executed. This includes 3 pops, which have the opposite behavior: pre increment.
+- First the PSW is popped from 134, then PCL from 135 (09), and finally PCH from 136 (02).
+- Indeed the next instruction is from 0209.
+- It is a pity that we can see that the I flag is set. The old value (cleared) is pushed at 1764224us, and that same value is popped at 1784808us.
+
+![Stack trace](stacktrace.png)
+
 ## 2.9. Conclusion
 
-We have a 6502 with some passives (pull-ups, caps) and a Nano.
-The Nano implements the rest of the system: memory and clock.
-And it povides a trace facility.
+We have a 6502 with some passives (pull-ups, caps) and a Nano. The Nano implements the rest of the system: memory and clock. And it provides a trace facility.
 
-This is a great way to investigate the behavior of the 6502.
-And it offers an easy start: next to the 6502 only a Nano is needed.
+This is a great way to investigate the behavior of the 6502. And it offers an easy start: next to the 6502 only a Nano is needed.
