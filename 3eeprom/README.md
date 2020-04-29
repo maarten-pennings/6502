@@ -3,9 +3,9 @@ Trying to build a 6502 based computer.
 
 We need a memory to store a program that executes on reset.
 This program could be, for example, a basic interpreter, a monitor or some OS shell.
-The memory needs to preserve data over power down.
+I don't know yet how to fill a RAM (connected to the 6502) with an external tool.
 So we go for a ROM, actually a _programmable_ ROM, a PROM.
-We make mistakes so let it be an erasable PROM, a EPROM, 
+We make mistakes so let it be an erasable PROM, an EPROM, 
 and in this age that will be an _electrically_ erasable PROM, an EEPROM.
 
 So, we will attach an EEPROM to our 6502, so that the 6502 has code to execute upon reset.
@@ -33,15 +33,15 @@ We will do the following experiments
 
 Programming the [AT28C16](https://opencircuit.shop/ProductInfo/1001018/CAT28C16A-Datasheet.pdf) is fairly simple.
 In steady state, the chip is powered (VCC, VSS) and enabled (nCE).
-To write a byte, set an address on its 11 address lines, data on its 8 data lines, and pulse nWE.
-To read a byte, set an address on its 11 address lines, pull nOE low, read data from the 8 data lines, and release nOE to high.
+To write a byte, set an address on its 11 address lines, data on its 8 data lines, and pulse nWE low.
+To read a byte from the memory chip, set an address on its 11 address lines, pull nOE low, read data from the 8 data lines, and release nOE to high.
 
 We can write Nano firmware to do that.
 One complication is that we need 8 data wires, 2 control wires (nWE, nOE) and 11 address wires.
 The Nano does not have that. So we follow Ben's approach and use a shift register for the address wires.
 We do not use the shift registers for the data wires, because we want to read the data as well.
 And we also do not use the shift registers for the control wires, because we want to time the 
-control pulses indepedent from the address line changes.
+control pulses indepedently from the address line changes.
 
 The idea is to write firmware that implements a _command interpreter_.
 This command interpreter allows us to enter commands (over UART/USB) to write bytes to memory locations.
@@ -93,7 +93,7 @@ See below for a demo session.
 
 The `>>` is the prompt. After the prompt I typed commands. The next line(s) are the response.
 
-Instead of entering commands manually over the UART/USB, one can also send a file with commands.
+Instead of entering commands manually over the UART/USB, one can also use a terminal program to send a file with write commands.
 Such a file could be called an EEPROM programming script.
 
 > Keep in mind that the Nano is less fast then your PC.
@@ -117,7 +117,7 @@ We will now use it again. The fourth (blinky) will be used at the end of the cha
 In this section, we are going to load an EEPROM with a program, hook the EEPROM to the 6502 and let it run.
 To confirm correctness, we trace it with a Nano. The Nano thus also acts as clock.
 
-For the 6502, we use the third program from the previous section.
+For the 6502, we use the third program.
 The main loop increments zero pages address 33 
 and the ISR routine (when an interrupt occurs) increments zero page address 44.
 
