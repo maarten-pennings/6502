@@ -8,16 +8,14 @@ Then I had a nice idea: the Nano controls the clock, so it knows when the addres
 
 We will do the following experiments
 
-- [2. Emulation](#2-emulation)
-  - [2.1. Clock](#21-clock)
-  - [2.2. Address bus](#22-address-bus)
-  - [2.3. Jump loop](#23-jump-loop)
-  - [2.4. Data bus](#24-data-bus)
-  - [2.5. Interrupt (IRQ)](#25-interrupt-irq)
-  - [2.6. Emulate ROM](#26-emulate-rom)
-  - [2.7. Emulate RAM](#27-emulate-ram)
-  - [2.8. Test IRQ](#28-test-irq)
-  - [2.9. Conclusion](#29-conclusion)
+- [2.1. Clock](README.md#21-Clock) - Use Nano as clock
+- [2.2. Address bus](README.md#22-Address-bus) - Use Nano to trace the address bus
+- [2.3. Jump loop](README.md#23-Jump-loop) - Test case: trace a JMP loop
+- [2.4. Data bus](README.md#24-Data-bus) - Use Nano to trace the data bus as well
+- [2.5. Interrupt (IRQ)](README.md#25-Interrupt-(IRQ)) - Test case: trace a single IRQ
+- [2.6. Emulate ROM](README.md#26-Emulate-ROM) - Use Nano to respond to data read requests
+- [2.7. Emulate RAM](README.md#27-Emulate-RAM) - Use Nano to also respond to data write requests
+- [2.8. Test IRQ](README.md#28-Test-IRQ) - Test case: trace IRQs
 
 ## 2.1. Clock
 
@@ -773,27 +771,23 @@ Memory loaded
   1809104us 20b 1 02
 ```
 
-The 6502 uses a _post decrement_ for stack pushes. In other words S points at the "first free" location just beyond the "top" of the stack. But also, the stack grows downwards. A typical initial value for S would be FF:
+The 6502 uses a _post decrement_ for stack pushes. In other words S points at the "first free" location just beyond the "top" of the stack. But also, the stack grows downwards. A typical initial value for S would be FF (`LDX #$ff` followed by `TXS`):
 
 ![Stack behavior](stack.png)
 
 With that in mind let's have a look at the trace
 
 - The first instruction of `main` clears the interrupt disable flag `CLI`, enabling interrupts.
-- It would have been wise to initialize the stack pointer. A typical initialization is `LDX #$ff` followed by `TXS`.
-- We see the by now understood 7 step reset sequence. Note that the stack pointer S starts off at 39, and there are three (fake) pushes (to 139, 138, 137) so S is 36 after reset. See figure below.
-- When the IRQ comes in we see similar 7 steps. Note that indeed PCH is now pushed at 136, PCL at 135,and PSW at 134 (so that S is now 33, see figure below).
+- It would have been wise to initialize the stack pointer. In our run it happens to have initial value 39.
+- We see the by now understood 7 step reset sequence. Note that there are three (fake) pushes. Since S happened to be 39, they are to 139, 138, 137. so S is 36 after reset. See figure below.
+- When the IRQ comes in we see similar 7 steps. Note that indeed PCH is now pushed at 136, PCL at 135,and PSW at 134, leaving S at 33, see figure below).
 - The PC is now loaded from the vector FFFE and FFFF (3FE/3FF in our 10 bit trace).
 - This executes the ISR at 300, which increments zero page location 44 to 1.
 - The RTI instruction is then executed. This includes 3 pops, which have the opposite behavior: pre increment.
 - First the PSW is popped from 134, then PCL from 135 (09), and finally PCH from 136 (02).
 - Indeed the next instruction is from 0209.
-- It is a pity that we can see that the I flag is set. The old value (cleared) is pushed at 1764224us, and that same value is popped at 1784808us.
+- It is a pity that we can't see that the I flag is set. The old value (cleared) is pushed at 1764224us, and that same value is popped at 1784808us.
 
 ![Stack trace](stacktrace.png)
 
-## 2.9. Conclusion
-
-We have a 6502 with some passives (pull-ups, caps) and a Nano. The Nano implements the rest of the system: memory and clock. And it provides a trace facility.
-
-This is a great way to investigate the behavior of the 6502. And it offers an easy start: next to the 6502 only a Nano is needed.
+(end of doc)
