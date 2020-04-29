@@ -296,11 +296,11 @@ This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switc
 
 For my "end-product", I would like a 6502 computer with three clocks: manual (the micro switch single-step per press), variable (the NE555 with the potentiometer that regulates the frequency), and nominal (the canned 1MHz oscillator).
 
-We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279), one for each switch (SWMAN, SWVAR, SWNOM). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
+We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279. The latches are used: one for each switch (SWMAN, SWVAR, SWNOM). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
 
 ![Clock schematic](clockselect.png)
 
-As said, of the three output lines, only one is set. This means that only one of the clock sources (MANCLK, VARCLK, NOMCLK) is passed on by the three ANDs. Finally, the ORs send out a single CLOCK signal. I have attached a LEDCLOCK for monitoring, and a capacitor to suppress spikes.
+As said, of the three output lines (the Qs from the latches), only one is set at a time. This means that only one of the clock sources (MANCLK, VARCLK, NOMCLK) is passed on by the three ANDs. Finally, the ORs send out a single CLOCK signal. I have attached a LEDCLOCK for monitoring, and a capacitor to suppress spikes.
 
 By the way, MANCLK is the output of the circuit in section [1.4](#14-Clock---micro-switch), the VARCLKis the output of the circuit in section [1.5](#15-Clock---NE555), and NOMCLK is the output of the canned oscillator, see section [1.2](#12-Clock---oscillator). One final detail, the HALT signal (when high) disables CLOCK (again, in the high state, because otherwise the 6502 looses state). The idea is that a program, via a simple IO device can raise the HALT line and with that stop itself.
 
