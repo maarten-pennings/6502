@@ -8,18 +8,19 @@ Then I had a nice idea: the Nano controls the clock, so it knows when the addres
 
 We will do the following experiments
 
-- [2.1. Clock](README.md#21-Clock) - Use Nano as clock
-- [2.2. Address bus](README.md#22-Address-bus) - Use Nano to trace the address bus
-- [2.3. Jump loop](README.md#23-Jump-loop) - Test case: trace a JMP loop
-- [2.4. Data bus](README.md#24-Data-bus) - Use Nano to trace the data bus as well
-- [2.5. Interrupt (IRQ)](README.md#25-Interrupt-(IRQ)) - Test case: trace a single IRQ
-- [2.6. Emulate ROM](README.md#26-Emulate-ROM) - Use Nano to respond to data read requests
-- [2.7. Emulate RAM](README.md#27-Emulate-RAM) - Use Nano to also respond to data write requests
-- [2.8. Test IRQ](README.md#28-Test-IRQ) - Test case: trace IRQs
+- [2.1. Clock](#21-Clock) - Use Nano as clock
+- [2.2. Address bus](#22-Address-bus) - Use Nano to trace the address bus
+- [2.3. Jump loop](#23-Jump-loop) - Test case: trace a JMP loop
+- [2.4. Data bus](#24-Data-bus) - Use Nano to trace the data bus as well
+- [2.5. Interrupt (IRQ)](#25-Interrupt-(IRQ)) - Test case: trace a single IRQ
+- [2.6. Emulate ROM](#26-Emulate-ROM) - Use Nano to respond to data read requests
+- [2.7. Emulate RAM](#27-Emulate-RAM) - Use Nano to also respond to data write requests
+- [2.8. Test IRQ](#28-Test-IRQ) - Test case: trace IRQs
+- [2.9. 2560 Shield](#29-2560-Shield) - Using a Mega 2560
 
 ## 2.1. Clock
 
-The [first step](../1clock/README.md#13-clock---nano) was taken in the previous chapter. We used a Nano as a clock source for the 6502. And that's all the Nano did. The address lines of the 6502 are dangling, the data lines of the 6502 are hardwired to EA (the opcode of the NOP instruction).
+The [first step](../1clock/#13-clock---nano) was taken in the previous chapter. We used a Nano as a clock source for the 6502. And that's all the Nano did. The address lines of the 6502 are dangling, the data lines of the 6502 are hardwired to EA (the opcode of the NOP instruction).
 
 The Nano runs a simple sketch that flips the clock line, and behold we have a 6502 "free" running at 160kHz.
 
@@ -789,5 +790,43 @@ With that in mind let's have a look at the trace
 - It is a pity that we can't see that the I flag is set. The old value (cleared) is pushed at 1764224us, and that same value is popped at 1784808us.
 
 ![Stack trace](stacktrace.png)
+
+## 2.9. 2560 Shield
+
+The Nano is a great tool for monitoring (and controlling) the 6502, but it has one serious disadvantage: it has too few pins. So, as a last step in the 'Emulation' chapter, I decided to switch from [ATmega328](https://store.arduino.cc/arduino-nano) (on the Nano) to [ATmega2560](https://store.arduino.cc/arduino-mega-2560-rev3). This increases digital pins from 22 to 54 (and also gives us more memory).
+
+|         | ATmega328  | ATmega2560 |
+|:-------:|:----------:|:----------:|
+| Voltage |     5V     |      5V    |
+| Flash   |    32kB    |    256kB   |
+| SRAM    |     2kB    |      8kB   |
+| Clock   |    16MHz   |     16MHz  |
+| Dig pins|    22      |     54     |
+| Price   |   [€20](https://store.arduino.cc/arduino-nano)      
+          |   [€35](https://store.arduino.cc/arduino-mega-2560-rev3)    |
+| Clone   |   [€3](https://www.aliexpress.com/item/32858764759.html)
+          |   [€8](https://www.aliexpress.com/item/4000163594025.html)  |
+
+Note that there are different form factors for ATmega2560 based Arduino boards. The [classic](https://robotdyn.com/mega-2560-ch340g-atmega2560-16au-micro-usb-0g-00004031.html) one is big (54×102 mm²) because it has (largely) single header rows. The [compact](https://robotdyn.com/mega-2560-pro-embed-ch340g-atmega2560-16au-with-pinheaders.html) one (54×38 mm²) has double header rows. Note that boards come in 3V (instead of 5V) and also without USB (I prefer with USB, I believe they are always 5V). The clones with USB also come with varying "USB to UART" chips (CH340G, CH340C, CP2104) - but here I don't have a preference.
+
+I believe the compact ones are tagged with "pro" and the USB ones with "embed", so Google for `atmega2560 pro embed`.
+
+I made a [schematic](2560shield.pdf) (using the webtool [EasyEDA](https://easyeda.com/)) with the following considerations:
+
+- I have connected every pin of the 6502 to a pin of the 2560.
+- The exception being the power pins of the 6502: the GND pins are hardwired and the VCC pin is wired via a transistor.
+- Even NC pins of the 6502 are wired, because newer models have those pins connected.
+- To prevent short circuit (6502 outputs to 5V on the same pin where the 2560 outputs 0V) I have added 2k2 resistors on all pip-pin connections.
+- I have tried to order the connections "logically". Connect similar signals to one "port" of the 2560, and connect the wires of one port in order. For example, all data line go to port A, and D0 maps to PA0, D1 to PA1 ... D7 to PA7.
+- I have also added an expansion connector, which breaks all pins of the 6502 out.
+- There is also a small expansion header for power (5V, GND) and an expansion port the breaks out two pins of the 2560 (so that in an experiment, we can feed an external event to the 6502).
+- There are three general purpose LEDs. Such a LED can be programmed to e.g. show the generated clock pulse (when it is slow), or act as an output pin (writes to 8000 could be mapped to a LED).
+- There are also three general purpose switches. Such as switch can be programmed to give an IRQ or, for example, hand control the clock ticks.
+
+I planned to make a real shield: the 6502 on top of the 2560. But there were to many wires and too little space, so I didn't manage the routing. They are now side by side.
+
+![PVB](2560shield.png)
+
+I ordered [PCB manufacturing](https://jlcpcb.com/) which are very low priced and have good quality (but prices are rising). If you want to also get some PCBs and want to save on routing, here are the [Gerber files](2560shield-gerber.zip).
 
 (end of doc)
