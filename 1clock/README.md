@@ -294,9 +294,9 @@ This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switc
 
 ## 1.6. Triple clock module
 
-For my "end-product", I would like a 6502 computer with three clocks: manual (the micro switch single-step per press), variable (the NE555 with the potentiometer that regulates the frequency), and nominal (the canned 1MHz oscillator).
+For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the micro switch single-step per press), _variable_ (the NE555 with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz oscillator).
 
-We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279. The latches are used: one for each switch (SWMAN, SWVAR, SWNOM). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
+We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279). Three latches are used in the selector: one for each switch (SWMAN, SWVAR, SWNOM) - the fourth latch is used for the [hand micro switch](#14-Clock---micro-switch). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
 
 ![Clock schematic](clockselect.png)
 
