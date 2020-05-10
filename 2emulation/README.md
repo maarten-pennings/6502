@@ -223,8 +223,8 @@ In the notes on the previous experiment, we have "load of 0000 (this confirms th
 Recall that we have Nano D2 for the 6502 ϕ0 (clock), and Nano D4..D13 plus A0..A5 for 6502 A0..A15.
 This leaves Nano D3, A6 and A7 free. Let's redesign;
 
-- Leave Nano D2 to R6502 ϕ0 (clock).
-- Connect Nano D3 to R6502 R/nW so that we can trace if the 6502 did a read or a write on the data bus.
+- Leave Nano D2 to 6502 ϕ0 (clock).
+- Connect Nano D3 to 6502 R/nW so that we can trace if the 6502 did a read or a write on the data bus.
 - Use Nano D4..D11 for 6502 data bus D0..D7. Full data trace.
 - Use Nano D12, D13, A0..A7 for 6502 A0..A9. Thus 10 bit address trace.
 
