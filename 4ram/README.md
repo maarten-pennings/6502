@@ -50,7 +50,7 @@ In the diagram below I made the ϕ0 curve green.
 - Note that the ϕ1 signal is the _inverse_ of ϕ0; and it is also a bit delayed with respect to ϕ0.
 - See the importance of ϕ2: the time of ϕ1 is specified with ϕ2 as basis (tDLY1), and not ϕ0 as basis.
 - The datasheet specifies tDLY1 as "ϕ0 Low to ϕ1 High Skew" and ranges from -20ns to +20ns.
-- Be alert to that: tDLY2 could be _negative_, which means its (rising) edge is actually _after_ the (falling) edge of ϕ2.
+- Be alert to that: tDLY1 could be _negative_, which means its (rising) edge is actually _after_ the (falling) edge of ϕ2.
 - I made two vertical lines red: they are the anchors for other events during a 6502 clock pulse.
 - Finally note the timing aspects of that one pulse: tCL (ϕ2 Low Pulse Width) of minimally 430ns, tCH (ϕ2 High Pulse Width) 
   of minimally 450ns, and even the "Clock Rise and Fall Times" (tR and tF) of maximally 25ns.
@@ -63,7 +63,8 @@ of memory access. Let's first have a look at the _read_ process.
 ![6502 timing diagram read](6502timing-read.png)
 
 - The key observation is that the 6502 clocks in the data when ϕ2 goes low. This is the red circle in the diagram.
-  In other words, irrespective of the cycle time: **data read is on falling edge of ϕ2**. 
+  In other words, irrespective of the cycle length (clock frequency): **data read is on falling edge of ϕ2** (that is,
+  if that clock cycle requires a read).
 - Of course the data lines must be stable around that moment. That is the "diamond" enclosed in blue interval lines.
 - "Read Data **Setup** Time" (tDSU) specifies that the data must be available at least 100ns before the falling edge.
 - "Read Data **Hold** Time" (tHR) specifies that the data must be stable until at least 10ns after the falling edge.
@@ -80,7 +81,7 @@ of memory access. Let's first have a look at the _read_ process.
   with a delay of at least tHRW "R/nW Hold Time" (15ns, green, right).
 - Note that the "hatched" section in row "D0-D7 (READ)" shows the interval in which the data lines vary (hence the hatching). 
   The memory chip is raising/lowering the data lines given the states of the address lines and R/nW. 
-  The memory chip has the complete clock cycle (1000ns) for that minus tADS (125ns) and tDUS (100ns).
+  The memory chip has the complete clock cycle (1000ns) for that minus tADS (125ns) and tDSU (100ns).
 - When the cycle time grows (lower clock frequency), the time for the memory chips grows since the tADS and tDUS stay equal.
   When the cycle time shrinks (higher clock frequency), the time for the memory chip shrinks as well. When the cycle 
   time approaches tADS+tDUS the system will no longer work.
