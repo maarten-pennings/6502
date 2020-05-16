@@ -137,8 +137,31 @@ Some notes:
 - We see the vector load at FFFC and FFFD.
 - We see the first instruction at EAEA (since all memory location contain EA, so do the vector addresses at FFFC and FFFD).
 - A NOP is two cycles, and we see that after RESET the address bus indeed changes every other step.
-- It might seem like the first NOP takes only 1 cycle; the `eaea` appears only once on the address bus. However, I think at 420620us the NOP instruction is fetched from `eaea`. It is decoded, and executed in the second tick (422148us). But during the second tick the address bus is already at `eaeb`. During the third tick (423680us) a NOP is fetched from `eaeb`.
+- It might seem like the first NOP takes only 1 cycle; the `eaea` appears only once on the address bus. See note below for explanation.
 - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
+
+**Cycle explanation** The 6502 actually has a 3-stage pipeline: fetch, decode, execute. The NOP instruction uses implied addressing. This is very wel explained in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69). I quote
+
+> Implied addressing is a single-byte instructions. [...] Operations of this form take 2 clock cycles to execute. The first cycle is the OP CODE fetch and during this fetch, the program counter increments. In the second cycle, the incremented PC-counter is now the address of the next byte of the instruction. However since the OP CODE totally defines the operation [Maarten: there is no second byte for an operand], the second memory fetch is worthless and any PC-counter increment in the second cycle is suppressed. During the second cycle, the OP CODE is decoded with recognition of its single byte operation. In the third cycle, the microprocessor repeats the same address to fetch the next OP CODE. This is the second time the memory address is fetched: once as second byte of the first instruction and second, as the correct OP CODE of the next instruction.
+
+This is my version of the table in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69).
+
+|cycle | address |  data   |  fetch  | decode  | execute | comment                        |
+|:----:|:-------:|:-------:|:-------:|:-------:|:-------:|:------------------------------:|
+|  1   |   PC    | OPCODE1 | OPCODE1 |         | OPCODE0 | Execute previous instruction   |
+|  2   |  PC+1   | OPCODE2 | OPCODE2 | OPCODE1 |         | Ignore OPCODE2, do not step PC |
+|  3   |  PC+1   | OPCODE2 | OPCODE2 |         | OPCODE1 |                                |
+
+Which means that for our all-NOPs program, it pans out as follows.
+
+|cycle | address |  data  | fetch  | decode | execute | comment                        |
+|:----:|:-------:|:------:|:------:|:------:|:-------:|:------------------------------:|
+|  1   |  EAEA   |  NOP1  |  NOP1  |        | <none>  | Empty pipeline after reset     |
+|  2   |  EAEB   |  NOP2  | (NOP2) |  NOP1  |         | Ignore NOP2, do not step PC    |
+|  3   |  EAEB   |  NOP2  | NOP2  |        |  NOP2   |                                |
+|  4   |  EAEC   |  NOP3  | (NOP3) |  NOP2  |         | Ignore NOP3, do not step PC    |
+|  5   |  EAEC   |  NOP3  |  NOP3  |        |  NOP2   |                                |
+|  6   |  EAED   |  NOP4  | (NOP4) |  NOP3  |         | Ignore NOP4, do not step PC    |
 
 ## 2.3. Jump loop
 
