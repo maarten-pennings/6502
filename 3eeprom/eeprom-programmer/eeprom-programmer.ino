@@ -9,8 +9,8 @@
 
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
-#define PROG_VERSION "11"
-#define PROG_DATE    "2019 nov 10"
+#define PROG_VERSION "12"
+#define PROG_DATE    "2020 may 23"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -413,7 +413,7 @@ void cmd_main_read( struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_read_longhelp[] PROGMEM = 
-  "SYNAX: read [ <addr> [ <num> ] ]\n"
+  "SYNTAX: read [ <addr> [ <num> ] ]\n"
   "- reads <num> bytes from EEPROM, starting at location <addr>\n"
   "- when <num> is absent, it defaults to 1\n"
   "- when <addr> and <num> are absent, reads entire EEPROM\n"
@@ -436,7 +436,7 @@ void cmd_main_write(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_write_longhelp[] PROGMEM = 
-  "SYNAX: write <addr> <data>...\n"
+  "SYNTAX: write <addr> <data>...\n"
   "- writes <data> byte to EEPROM location <addr>\n"
   "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode\n"
@@ -451,7 +451,7 @@ const char cmd_write_longhelp[] PROGMEM =
 ;
   
 const char cmd_program_longhelp[] PROGMEM = 
-  "SYNAX: program <addr> <data>...\n"
+  "SYNTAX: program <addr> <data>...\n"
   "- performs write followed by verify\n"
   "- see help for those commands for details\n"
 ;
@@ -474,15 +474,15 @@ void cmd_main_verify(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_verify_longhelp[] PROGMEM = 
-  "SYNAX: verify <addr> <data>...\n"
+  "SYNTAX: verify <addr> <data>...\n"
   "- reads byte from EEPROM location <addr> and compares to <data>\n"
   "- prints <data> if equal, otherwise '<data>~<read>', where <read> is read data\n"
   "- unequal values increment global error counter\n"
   "- multiple <data> bytes allowed (auto increment of <addr>)\n"
   "- <data> may be *, this toggles streaming mode (see `write` command)\n"
-  "SYNAX: verify print\n"
+  "SYNTAX: verify print\n"
   "- prints global error counter, uart overflow counter and stopwatch\n"
-  "SYNAX: [@]verify clear\n"
+  "SYNTAX: [@]verify clear\n"
   "- sets global error counter, uart overflow counter, and stopwatch to 0\n"
   "- with @ present, no feedback is printed\n"
   "NOTE:\n"
@@ -540,7 +540,7 @@ void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_erase_longhelp[] PROGMEM = 
-  "SYNAX: erase [ <addr> [ <num> [ <data> [ <step> ]] ] ]\n"
+  "SYNTAX: erase [ <addr> [ <num> [ <data> [ <step> ]] ] ]\n"
   "- erase <num> bytes in EEPROM, starting at location <addr>, by writing <data>\n"
   "- <data> it is stepped by one every <step> addresses.\n"
   "- when <step> is absent, <data> is never stepped\n"
@@ -568,7 +568,7 @@ void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_info_longhelp[] PROGMEM = 
-  "SYNAX: info\n"
+  "SYNTAX: info\n"
   "- shows application information (name, author, version, date)\n"
   "- shows supported EEPROM(s)\n"
   "- shows cpu info (cpu voltage, cpu speed, uart rx buf size)\n"
@@ -608,9 +608,9 @@ void cmd_main_echo(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_echo_longhelp[] PROGMEM = 
-  "SYNAX: echo [line] <word>...\n"
-  "- echo's (prints) all words (useful in scripts)\n"
-  "SYNAX: [@]echo [ enable | disable ]\n"
+  "SYNTAX: echo [line] <word>...\n"
+  "- prints all words (useful in scripts)\n"
+  "SYNTAX: [@]echo [ enable | disable ]\n"
   "- without arguments shows status of terminal echoing\n"
   "- with arguments enables/disables terminal echoing\n"
   "- with @ present, no feedback is printed\n"
@@ -648,14 +648,15 @@ void cmd_main_help(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_help_longhelp[] PROGMEM = 
-  "SYNAX: help\n"
+  "SYNTAX: help\n"
   "- lists all commands\n"
-  "SYNAX: help <cmd>\n"
+  "SYNTAX: help <cmd>\n"
   "- gives detailed help on command <cmd>\n"
   "NOTES:\n"
   "- all commands may be shortened, for example 'help', 'hel', 'he', 'h'\n"
   "- sub commands may be shortened, for example 'verify clear' to 'verify c'\n"
-  "- normal promp is >>, other prompt indicates streaming mode (see write)\n"
+  "- commands may be suffixed with a comment starting with #\n"
+  "- normal prompt is >>, other prompt indicates streaming mode (see write)\n"
 ;
 
 // The handler for the "options" command
@@ -720,7 +721,7 @@ void cmd_main_options(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_options_longhelp[] PROGMEM = 
-  "SYNAX: options ( type|chip <val> )*\n"
+  "SYNTAX: options ( type|chip <val> )*\n"
   "- without arguments, shows configured options\n"
   "- type 28c16|28c64: configures programmer for EEPROM type\n"
   "- chip enable|disable: configures chip-enable line of EEPROM\n"
