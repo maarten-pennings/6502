@@ -10,7 +10,7 @@
 
 #define PROG_NAME    "Arduino EEPROM Programmer"
 #define PROG_VERSION "12"
-#define PROG_DATE    "2020 may 23"
+#define PROG_DATE    "2020 may 25"
 #define PROG_AUTHOR  "Maarten Pennings"
 
 
@@ -443,7 +443,7 @@ const char cmd_write_longhelp[] PROGMEM =
   "NOTE:\n"
   "- <addr> and <data> are in hex\n"
   "STREAMING:\n"
-  "- when streaming mode is 'on', the end-of-line does not terminate the command\n"
+  "- when streaming is active, the end-of-line does not terminate the command\n"
   "- next lines having 0 or more <data> will also be written\n"
   "- the prompt for next lines show the streaming mode (write, program, or verify)\n"
   "- the prompt for next lines also show target address\n"
@@ -479,7 +479,7 @@ const char cmd_verify_longhelp[] PROGMEM =
   "- prints <data> if equal, otherwise '<data>~<read>', where <read> is read data\n"
   "- unequal values increment global error counter\n"
   "- multiple <data> bytes allowed (auto increment of <addr>)\n"
-  "- <data> may be *, this toggles streaming mode (see `write` command)\n"
+  "- <data> may be *, this toggles streaming mode (see 'write' command)\n"
   "SYNTAX: verify print\n"
   "- prints global error counter, uart overflow counter and stopwatch\n"
   "SYNTAX: [@]verify clear\n"
@@ -515,6 +515,7 @@ void cmd_erase(uint16_t addr, uint16_t num, uint8_t data, uint16_t step ) {
 void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
   (void)desc; // unused
   if( eeprom_ce_get()!=EEPROM_CE_ENABLE ) { Serial.println(F("ERROR: use 'opt' to enable EEPROM and select type")); return; }
+  if( strcmp(argv[0],"erase")!=0 ) { Serial.println(F("ERROR: erase: command must be spelled in full to prevent accidental erase")); return; }
   // erase [ <addr> [ <num> [ <data> [ <step> ] ] ] ]
   if( argc==1 ) { cmd_erase(0x000, eeprom_size(), 0xFF, 0); return; }
   // Parse addr
@@ -540,7 +541,7 @@ void cmd_main_erase( struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_erase_longhelp[] PROGMEM = 
-  "SYNTAX: erase [ <addr> [ <num> [ <data> [ <step> ]] ] ]\n"
+  "SYNTAX: erase [ <addr> [ <num> [ <data> [ <step> ] ] ] ]\n"
   "- erase <num> bytes in EEPROM, starting at location <addr>, by writing <data>\n"
   "- <data> it is stepped by one every <step> addresses.\n"
   "- when <step> is absent, <data> is never stepped\n"
@@ -548,8 +549,9 @@ const char cmd_erase_longhelp[] PROGMEM =
   "- when <num> is absent, erase one page (<num>=100)\n"
   "- when <addr> is absent, erase entire EEPROM\n"
   "- erase is always verified\n"
+  "- command name 'erase' must be spelled in full to prevent accidental erase\n"
   "NOTE:\n"
-  "- <addr>, <num>, and <data> are in hex\n"
+  "- <addr>, <num>, <data>, and <step> are in hex\n"
 ;
   
 
@@ -570,7 +572,6 @@ void cmd_main_info(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 const char cmd_info_longhelp[] PROGMEM = 
   "SYNTAX: info\n"
   "- shows application information (name, author, version, date)\n"
-  "- shows supported EEPROM(s)\n"
   "- shows cpu info (cpu voltage, cpu speed, uart rx buf size)\n"
 ;
 
@@ -611,10 +612,10 @@ const char cmd_echo_longhelp[] PROGMEM =
   "SYNTAX: echo [line] <word>...\n"
   "- prints all words (useful in scripts)\n"
   "SYNTAX: [@]echo [ enable | disable ]\n"
-  "- without arguments shows status of terminal echoing\n"
   "- with arguments enables/disables terminal echoing\n"
+  "- (disabled is useful in scripts; output is relevant, but input much less)\n"
   "- with @ present, no feedback is printed\n"
-  "- useful in scripts; output is relevant, but input much less\n"
+  "- without arguments shows status of terminal echoing\n"
   "NOTES:\n"
   "- 'echo line' prints a white line (there are no <word>s)\n"
   "- 'echo line enable' prints 'enable'\n"
@@ -662,7 +663,7 @@ const char cmd_help_longhelp[] PROGMEM =
 // The handler for the "options" command
 void cmd_options_print() { 
   int mux=digitalRead(EEPROM_PIN_16n64); 
-  Serial.print(F("options: type: ")); Serial.print( mux?F("28c16 (2k*8b = "):F("28c64 (8k*8b = ") ); Serial.print( eeprom_size(),HEX ); Serial.println( F("B) ") ); 
+  Serial.print(F("options: type: ")); Serial.print( mux?F("28c16 (2k*8b = "):F("28c64 (8k*8b = dec ") ); Serial.print( eeprom_size() ); Serial.println( F("B) ") ); 
   Serial.print(F("options: chip: ")); Serial.println( digitalRead(EEPROM_PIN_nCE)==LOW?F("enabled"):F("disabled")); 
 }
 const char * s_type = "type";
@@ -721,10 +722,10 @@ void cmd_main_options(struct cmd_desc_s * desc, int argc, char * argv[] ) {
 }
 
 const char cmd_options_longhelp[] PROGMEM = 
-  "SYNTAX: options ( type|chip <val> )*\n"
+  "SYNTAX: options ( type <val> | chip <val> )*\n"
   "- without arguments, shows configured options\n"
-  "- type 28c16|28c64: configures programmer for EEPROM type\n"
-  "- chip enable|disable: configures chip-enable line of EEPROM\n"
+  "- type 28c16 | 28c64: configures programmer for EEPROM type\n"
+  "- chip enable | disable: configures chip-enable line of EEPROM\n"
 ;
 
 // All command descriptors
