@@ -312,14 +312,14 @@ This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switc
 >
 > To get the biggest dynamic range (the ratio of the generated clock frequencies for pot to min respectively max),
 > the potmeter needs to have the highest value. The biggest I could find was **1MΩ for R_B2**
-> Note that _t_max_/_t_min_ = 0.693(R_A+2×(R_B1+R_B2))×C / 0.693(R_A+2×R_B1)×C = (R_A+2×(R_B1+R_B2)) / (R_A+2×R_B1).
+> Note that _t_slow_/_t_fast_ = 0.693(R_A+2×(R_B1+R_B2))×C / 0.693(R_A+2×R_B1)×C = (R_A+2×(R_B1+R_B2)) / (R_A+2×R_B1).
 > Since we have R_A=R_B1, we can simplify the ratio to (3×R_B1+2×R_B2) / (3×R_B1).
 > Under the assumption that R_B1<<R_B2, we can simplify the ratio to 2×R_B2 / 3×R_B1 = 0.66 R_B2/R_B1.
 > So with R_B2=1M and R_B1=1k, we get a dynamic range of 666.
 >
 > With the capacitor C, we "place" the range. 
-> We could for example have a _t_min_ of 1ms (f=1000Hz) and a _t_max_ of 666ms (1.5Hz)
-> Or we can for example have a _t_min_ of 10ms (f=100Hz) and a _t_max_ of 6666ms (0.15Hz)
+> We could for example have a _t_fast_ of 1ms (f=1000Hz) and a _t_slow_ of 666ms (1.5Hz). 
+> Or we can for example have a _t_fast_ of 10ms (f=100Hz) and a _t_slow_ of 6666ms (0.15Hz). 
 > The former needs a C of 0.47µF and the latter one of 4.7µF.
 > I like slow, but 6.5 seconds per tick is a bit overdone. 
 > So I settled on **C of 2.2µF**, this gives a range of 4.6ms..3s (220Hz..0.33Hz).
