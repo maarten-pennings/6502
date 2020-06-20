@@ -292,6 +292,38 @@ By varying the resistor value, the frequency can be adapted. I will opt for an R
 
 This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switch) There is a double throw switch to select between the micro switch and the NE555 source. See the [video](https://www.youtube.com/watch?v=JenGqVLovyA), which demonstrates a reset (single stepping), and than switching to the NE555 clock.
 
+> How to dimension the components?
+>
+> Let's start by looking at the "fast" case, the potentiometer R_B2 to 0Ω.
+> The first observation is that there is probably a minimum value for R_A, 
+> otherwise the current through the discharge transistor gets too large.
+> I could not find this spec point in the NE555 datasheet, but 
+> [note 3 in this book](https://books.google.nl/books?id=N6FDii6_nSEC&pg=PA285) 
+> suggests 1kΩ as minimum. Let's set **R_A to 1kΩ**.
+>
+> Is there a lower limit for R_B1? I don't know if there is a similar current limiting argument as for R_A, 
+> but there is a functional one. If R_B1 gets smaller, the duty cycle t_H/t gets towards 100%. 
+> If we want it towards 50%, then R_B1 needs to be (much) greater then R_A.
+> I decided to settle for same value as R_A, so also **1kΩ for R_B1**.
+> This gives a duty cycle of 66% high and 33% low for the fast case, the short low is still long enough.
+>
+> We have now fixed R_A and R_B1. 
+> To determine R_B2 and C, let's consider the "slow" case, the potentiometer R_B2 to max.
+>
+> To get the biggest dynamic range (the ratio of the generated clock frequencies for pot to min respectively max),
+> the potmeter needs to have the highest value. The biggest I could find was **1MΩ for R_B2**
+> Note that _t_max_/_t_min_ = 0.693(R_A+2×(R_B1+R_B2))×C / 0.693(R_A+2×R_B1)×C = (R_A+2×(R_B1+R_B2)) / (R_A+2×R_B1).
+> Since we have R_A=R_B1, we can simplify the ratio to (3×R_B1+2×R_B2) / (3×R_B1).
+> Under the assumption that R_B1<<R_B2, we can simplify the ratio to 2×R_B2 / 3×R_B1 = 0.66 R_B2/R_B1.
+> So with R_B2=1M and R_B1=1k, we get a dynamic range of 666.
+>
+> With the capacitor C, we "place" the range. 
+> We could for example have a _t_min_ of 1ms (f=1000Hz) and a _t_max_ of 666ms (1.5Hz)
+> Or we can for example have a _t_min_ of 10ms (f=100Hz) and a _t_max_ of 6666ms (0.15Hz)
+> The former needs a C of 0.47µF and the latter one of 4.7µF.
+> I like slow, but 6.5 seconds per tick is a bit overdone. 
+> So I settled on **C of 2.2µF**, this gives a range of 4.6ms..3s (220Hz..0.33Hz).
+
 ## 1.6. Triple clock module
 
 For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the micro switch single-step per press), _variable_ (the NE555 with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz oscillator).
