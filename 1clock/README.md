@@ -276,7 +276,7 @@ As [Ben Eater](https://www.youtube.com/watch?v=81BgFhm2vz8) explains buttons hav
 
 ![Schematic manual stepping](manual.jpg)
 
-Note that the 74279's control signals are low active, so the double throw switch has its common to ground and the NO (normally open) and NC (normally closed) pulled-high. Also note that the normally closed is connected to the latch, so that in idle position, the output (Q) is high. The reason for this is that the 6502 does not survive long _low_ periods of the clock.
+Note that the 74279's control signals are low active, so the double throw switch has its common to ground and the NO (normally open) and NC (normally closed) pulled-high. Also note that the normally closed is connected to the _set_ of the latch, so that in switch idle position, the latch output (Q) is high. The reason for this is that the 6502 does not survive long _low_ periods of the clock.
 
 The above circuit replaces the Nano in the schematic of [1.3.1.](#131-Clock---Nano---wiring) and I have added LEDs on _all_ address pins. This is the resulting breadboard. The top-right shows the single-step micro switch circuit. The top-left shows NE555 based clocking circuit from the [next](#15-Clock---NE555) section.
 
