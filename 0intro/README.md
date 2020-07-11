@@ -37,9 +37,10 @@ Western Design Center still makes 6502s (in CMOS). Their **W65C02** datasheet sa
 
 Datasheets on the 6502 variants
 
-- MOS [6502 datasheet](https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf)
-- Rockwell [R65C02 datasheet](https://www.usbid.com/assets/datasheets/15/rockwell.pdf)
-- Western Design Center [W65C02 datasheet](https://www.mouser.com/datasheet/2/436/w65c02s-2572.pdf)
+- MOS [6502 datasheet](https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf).
+- Rockwell [R65C02 datasheet](https://www.usbid.com/assets/datasheets/15/rockwell.pdf).
+- Western Design Center [W65C02 datasheet](https://www.mouser.com/datasheet/2/436/w65c02s-2572.pdf).
+- A [comparison](https://en.m.wikipedia.org/wiki/WDC_65C02) between the NMOS 6502 and the CMOS 6502.
 
 Detailed technical
 
