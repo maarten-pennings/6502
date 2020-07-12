@@ -343,7 +343,10 @@ Here is a prototype of my complete clock module.
 
 ## 1.7. The first module: a triple clock
 
-Let's convert that to a real PCB. The schematic is available as [pdf](clock3-schematic.pdf). Notes
+Let's convert the prototype to a real PCB. 
+The schematic is available as [pdf](clock3-schematic.pdf). 
+
+Notes
 
 - I added a USB plug  
   This allows one to power the clock module through USB, but also later the main board from the clock module, via the 8-pin interface.
