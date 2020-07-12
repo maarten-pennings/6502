@@ -349,16 +349,17 @@ The schematic is available as [pdf](clock3-schematic.pdf).
 Notes
 
 - I added a USB plug  
-  This allows one to power the clock module through USB, but also later the main board from the clock module, via the 8-pin interface.
+  This allows one to power the clock module through USB, 
+  but also later the main board from the clock module, via the 8-pin interface.
 - I added a CONT switch  
-  There was already a HLT input signal; this blocks the clock ("halts the CPU"). 
-  The idea is that the CPU can raise the HLT pin at the end of the program.
-  To continue from halting, press the CONT switch.
-- Have nHLT next to HLT input and nCLK next to CLK output.  
-  The CONT switch is debounced with am S/R latch built from two NANDS.  
-  The other two NANDS are used to invert HLT and CLK.
+  There was already a HALT input signal; this blocks the clock ("halts the CPU"). 
+  The idea is that the CPU can raise the HALT pin at the end of the program.
+  To continue after halting, press the CONT switch.
+- I added nHALT next to the HALT input and nCLK next to the CLK output.  
+  The CONT switch is debounced with an S/R latch built from two NANDS.  
+  The other two NANDS are used to invert HALT and CLK.
 - The CLK output is amplified with a spare AND  
-  It also drives a LED, and one AND was left anyhow.
+  The CLK also drives a LED, and one AND was left anyhow.
 
 
 (end of doc)
