@@ -20,6 +20,7 @@ We will do the following experiments
 - [1.4. Clock - micro switch](#14-Clock---micro-switch) - Using a micro switch for manual clocking
 - [1.5. Clock - NE555](#15-Clock---NE555) - Using an NE555 for clocking
 - [1.6. Triple clock module](#16-Triple-clock-module) - A standard clock module
+- [1.7. The first module: a triple clock](#17-The-first-module-a-triple-clock) - The first PCB for our 6502 computer
 
 ## 1.1. Clock - crystal
 
@@ -339,6 +340,22 @@ By the way, MANCLK is the output of the circuit in section [1.4](#14-Clock---mic
 Here is a prototype of my complete clock module.
 
 ![Clock selector breadboard](clockselect.jpg)
+
+## 1.7. The first module: a triple clock
+
+Let's convert that to a real PCB. The schematic is available as [pdf](clock3-schematic.pdf). Notes
+
+- I added a USB plug  
+  This allows one to power the clock module through USB, but also later the main board from the clock module, via the 8-pin interface.
+- I added a CONT switch  
+  There was already a HLT input signal; this blocks the clock ("halts the CPU"). 
+  The idea is that the CPU can raise the HLT pin at the end of the program.
+  To continue from halting, press the CONT switch.
+- Have nHLT next to HLT input and nCLK next to CLK output.  
+  The CONT switch is debounced with am S/R latch built from two NANDS.  
+  The other two NANDS are used to invert HLT and CLK.
+- The CLK output is amplified with a spare AND  
+  It also drives a LED, and one AND was left anyhow.
 
 
 (end of doc)
