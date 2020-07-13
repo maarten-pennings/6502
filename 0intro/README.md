@@ -21,6 +21,13 @@ Then I [learned](http://wilsonminesco.com/NMOS-CMOSdif/) that the old ones are N
 
 [![6502 variant 2](6502-2s.jpg)](6502-2.png) [![6502 variant 4](6502-4s.jpg)](6502-4.png)
 
+The latest greatest seem to be the ones from The Western Design Center (WDC). 
+But they are a bit hard to source. I stumbled on these at [aliexpress](https://www.aliexpress.com/item/4000730770178.html).
+I ordered a batch of five, and there where at least three types in the batch.
+Here are photos of two of them. Still have to check these.
+
+[![6502 variant 5](6502-5s.jpg)](6502-5.png) [![6502 variant 6](6502-6s.jpg)](6502-6.png)
+
 ## 0.2. Slow clock
 
 One of the advantages of the CMOS version is that the clock can be really slow. I like that for a development system, because it makes it easy to debug hardware. But it also allows for hardware-based single stepping.
@@ -40,11 +47,11 @@ Datasheets on the 6502 variants
 - MOS [6502 datasheet](https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf).
 - Rockwell [R65C02 datasheet](https://www.usbid.com/assets/datasheets/15/rockwell.pdf).
 - Western Design Center [W65C02 datasheet](https://www.mouser.com/datasheet/2/436/w65c02s-2572.pdf).
-- A [comparison](https://en.m.wikipedia.org/wiki/WDC_65C02) between the NMOS 6502 and the CMOS 6502.
 
 Detailed technical
 
 - Synertek [hardware manual](http://archive.6502.org/datasheets/synertek_hardware_manual.pdf)
 - Synertek [programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf)
+- A [comparison](https://en.m.wikipedia.org/wiki/WDC_65C02) between the NMOS 6502 and the CMOS 6502.
 
 (end of doc)

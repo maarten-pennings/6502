@@ -344,22 +344,26 @@ Here is a prototype of my complete clock module.
 ## 1.7. The first module: a triple clock
 
 Let's convert the prototype to a real PCB. 
-The schematic is available as [pdf](clock3-schematic.pdf). 
+The schematic is available as [pdf](clock3-schematic.pdf), and also the [gerber](Gerber_clock3-pcb.zip) in case you want a copy.
 
-Notes
+Some additions compared to the prototype:
 
-- I added a USB plug  
+- **USB plug**  
   This allows one to power the clock module through USB, 
   but also later the main board from the clock module, via the 8-pin interface.
-- I added a CONT switch  
+- **CONT switch**  
   There was already a HALT input signal; this blocks the clock ("halts the CPU"). 
   The idea is that the CPU can raise the HALT pin at the end of the program.
-  To continue after halting, press the CONT switch.
-- I added nHALT next to the HALT input and nCLK next to the CLK output.  
+  To continue after halting, press the CONT switch. 
+- **nHALT input** next to the HALT input and **nCLK output** next to the CLK output.  
   The CONT switch is debounced with an S/R latch built from two NANDS.  
   The other two NANDS are used to invert HALT and CLK.
-- The CLK output is amplified with a spare AND  
-  The CLK also drives a LED, and one AND was left anyhow.
+- **amplifier for CLK**
+  The CLK line (from the top-level OR) also drives a LED.
+  I used a spare AND to drive the outgoing line.
 
+The is the virtual PCB
+
+![Virtual PCB](clock3-pcb.png)
 
 (end of doc)
