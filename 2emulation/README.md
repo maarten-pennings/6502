@@ -882,7 +882,7 @@ EAEE r EA
 
 The output is as expected: 2 internal clocks, 3 stack clock, load of reset vector (EAEA) and then executing NOPs (EA) from EAEA onwards. Note that the clock is rather slow: 100ms periods or 10 Hz. This works for 65C02, but not for the NMOS variants. 
 
-I also wrote a sketch that uses the buttons and the LEDs: [2560shield-control](2560shield-control). The first button (SW0) functions as pause/continue (of the clock), the second one generates IRQ and the third one a RST. Note that the "pause" keeps the clock high. This works for 65C02, but not for the NMOS variants. This is a trace.
+I also wrote a sketch that uses the buttons and the LEDs: [2560shield-ctrl](2560shield-ctrl). The first button (SW0) functions as pause/continue (of the clock), the second one generates IRQ and the third one a RST. Note that the "pause" keeps the clock high. This works for 65C02, but not for the NMOS variants. This is a trace.
 
 ```text2560shield-ctrl
 
