@@ -16,7 +16,9 @@ We will do the following experiments
 - [2.6. Emulate ROM](#26-Emulate-ROM) - Use Nano to respond to data read requests
 - [2.7. Emulate RAM](#27-Emulate-RAM) - Use Nano to also respond to data write requests
 - [2.8. Test IRQ](#28-Test-IRQ) - Test case: trace IRQs
-- [2.9. 2560 Shield](#29-2560-Shield) - Using a Mega 2560
+- [2A.1. 2560 Shield](#2A1-2560-Shield) - Using a Mega 2560
+- [2A.2. Testing the shield](#2A2-Testing-the-shield) - Sketches for the shield
+- [2A.3 Memory](#2A3-Memory) - Sketch emulating memory
 
 ## 2.1. Clock
 
@@ -140,17 +142,17 @@ Some notes:
 - It might seem like the first NOP takes only 1 cycle; the `eaea` appears only once on the address bus. See note below for explanation.
 - The time between the trace lines (one clock period) is about 1500us, so we are running at 0.7kHz
 
-**Cycle explanation** The 6502 actually has a 3-stage pipeline: fetch, decode, execute. The NOP instruction uses implied addressing. This is very wel explained in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69). I quote
+**Cycle explanation** The 6502 actually has a 3-stage pipeline: fetch, decode, execute. The NOP instruction uses implied addressing. This is very well explained in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69). I quote
 
 > Implied addressing is a single-byte instructions. [...] Operations of this form take 2 clock cycles to execute. The first cycle is the OP CODE fetch and during this fetch, the program counter increments. In the second cycle, the incremented PC-counter is now the address of the next byte of the instruction. However since the OP CODE totally defines the operation [Maarten: there is no second byte for an operand], the second memory fetch is worthless and any PC-counter increment in the second cycle is suppressed. During the second cycle, the OP CODE is decoded with recognition of its single byte operation. In the third cycle, the microprocessor repeats the same address to fetch the next OP CODE. This is the second time the memory address is fetched: once as second byte of the first instruction and second, as the correct OP CODE of the next instruction.
 
-This is my version of the table in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69).
+This is my version of the implied addressing mode table in the [Programming manual](http://archive.6502.org/datasheets/synertek_programming_manual.pdf#page=69).
 
-|cycle | address |  data   |  fetch  | decode  | execute | comment                        |
-|:----:|:-------:|:-------:|:-------:|:-------:|:-------:|:------------------------------:|
-|  1   |   PC    | OPCODE1 | OPCODE1 |         | OPCODE0 | Execute previous instruction   |
-|  2   |  PC+1   | OPCODE2 | OPCODE2 | OPCODE1 |         | Ignore OPCODE2, do not step PC |
-|  3   |  PC+1   | OPCODE2 | OPCODE2 |         | OPCODE1 |                                |
+|cycle | address |  data   |  1 fetch  | 2 decode  | 3 execute | comment                                         |
+|:----:|:-------:|:-------:|:---------:|:---------:|:---------:|:-----------------------------------------------:|
+|  1   |   PC    | OPCODE1 |**OPCODE1**|           |  OPCODE0  | Fetch new (OPCODE1), execute previous (OPCODE0) |
+|  2   |  PC+1   | OPCODE2 |  OPCODE2  |**OPCODE1**|           | Ignore OPCODE2 (is not operand), do not step PC |
+|  3   |  PC+1   | OPCODE2 |  OPCODE2  |           |**OPCODE1**| Fetch new (OPCODE2), execute previous (OPCODE1) |
 
 Which means that for our all-NOPs program, it pans out as follows.
 
@@ -158,9 +160,9 @@ Which means that for our all-NOPs program, it pans out as follows.
 |:----:|:-------:|:------:|:------:|:------:|:-------:|:------------------------------:|
 |  1   |  EAEA   |  NOP1  |  NOP1  |        | <none>  | Empty pipeline after reset     |
 |  2   |  EAEB   |  NOP2  | (NOP2) |  NOP1  |         | Ignore NOP2, do not step PC    |
-|  3   |  EAEB   |  NOP2  | NOP2  |        |  NOP2   |                                |
+|  3   |  EAEB   |  NOP2  |  NOP2  |        |  NOP1   | Fetch NOP2, execute NOP1       |
 |  4   |  EAEC   |  NOP3  | (NOP3) |  NOP2  |         | Ignore NOP3, do not step PC    |
-|  5   |  EAEC   |  NOP3  |  NOP3  |        |  NOP2   |                                |
+|  5   |  EAEC   |  NOP3  |  NOP3  |        |  NOP2   | Fetch NOP3, execute NOP2       |
 |  6   |  EAED   |  NOP4  | (NOP4) |  NOP3  |         | Ignore NOP4, do not step PC    |
 
 ## 2.3. Jump loop
@@ -169,7 +171,7 @@ The previous experiment is a success: we see the address lines increment nicely 
 
 However, without a memory to store our program, we are limited in our possibilities. There is one way out: go old style. Write a program in _hardware_.
 
-I got the idea from [James Calvert's tight loop](http://mysite.du.edu/~jcalvert/tech/6504.htm). We make some logic (in hardware)  that emulates an 8 byte program. We NOR together the first three address lines to create the, let's call it, "v-signal". The v-signal is bound to D2, D3 and D6 of the 6502, the other data lines (D0, D1, D4, D5 and D7) are bound to GND. So, the data bus is wired to `0b 0v00 vv00` depending on the value of v. This means that
+I got the idea from [James Calvert's tight loop](http://mysite.du.edu/~jcalvert/tech/6504.htm). We make some logic (in hardware) that emulates an 8 byte program. We NOR together the first three _address_ lines to create the, let's call it, "v-signal". This v-signal is input to D2, D3 and D6 of the 6502, the other data lines (D0, D1, D4, D5 and D7) are bound to GND. So, the data bus is wired to `0b 0v00 vv00` depending on the value of v. This means that
 
 - if v=0 then D = 0b 0000 0000 = 0x00
 - if v=1 then D = 0b 0100 1100 = 0x4C
@@ -187,13 +189,13 @@ For the various addresses, that gives the following data reads:
 |     0002      |    ... 010    |    0    |  00  | JMP 00**00**        |
 |     0003      |    ... 011    |    0    |  00  | (don't care)        |
 
-In other words, at FFFC, the 6502 reads the start address 00 00, and at 0000 the 6502 reads 4C 00 00. Note that 4C 00 00 means JMP 0000, since 4C is the opcode for JMP abs.
+In other words, at FFFC, the 6502 reads the start address 00 00, and at 0000 the 6502 reads 4C 00 00. Note that 4C 00 00 means JMP 0000, since 4C is the opcode for JMP absolute.
 
 How do we implement this in hardware? This the schematic:
 
 ![nano-jmp.png](nano-jmp.png)
 
-Here is a photo of my board. Note the _triple OR_ (4075) and the _hex inverter_ (7404) chips on the right. Also note the three blue wires coming in (from A0, A1, A2) and the blue wire going out (to D2, d3 and D6).
+Here is a photo of my board. Note the _triple OR_ (4075) and the _hex inverter_ (7404) chips on the right. Also note the three blue wires coming in (from A0, A1, A2) and the blue wire going out (to D2, D3 and D6).
 
 ![nano-jmp.jpg](nano-jmp.jpg)
 
@@ -305,7 +307,7 @@ void loop() {
 }
 ```
 
-The results are great. We made a trace of the JMP 0000 program in the same way as before (just after reset):
+We made a trace of the JMP 0000 program in the same way as before (just after reset):
 
 ```text
 Welcome to AddrDataSpy6502
@@ -814,19 +816,24 @@ With that in mind let's have a look at the trace
 
 ![Stack trace](stacktrace.png)
 
-## 2.9. 2560 Shield
+# 2A. Appendix
+
+The chapters in the appendix where added later - when I started to develop some PCBs.
+
+## 2A.1. 2560 Shield
 
 The Nano is a great tool for monitoring (and controlling) the 6502, but it has one serious disadvantage: it has too few pins. So, as a last step in the 'Emulation' chapter, I decided to switch from [ATmega328](https://store.arduino.cc/arduino-nano) (on the Nano) to [ATmega2560](https://store.arduino.cc/arduino-mega-2560-rev3). This increases digital pins from 22 to 54 (and also gives us more memory).
 
-|         | ATmega328  | ATmega2560 |
-|:-------:|:----------:|:----------:|
-| Voltage |     5V     |      5V    |
-| Flash   |    32kB    |    256kB   |
-| SRAM    |     2kB    |      8kB   |
-| Clock   |    16MHz   |     16MHz  |
-| Dig pins|    22      |     54     |
-| Price   | [€20](https://store.arduino.cc/arduino-nano) | [€35](https://store.arduino.cc/arduino-mega-2560-rev3) |
-| Clone   | [€3](https://www.aliexpress.com/item/32858764759.html) | [€8](https://www.aliexpress.com/item/4000163594025.html) |
+|           | ATmega328  | ATmega2560 |
+|:---------:|:----------:|:----------:|
+| Voltage   |     5V     |      5V    |
+| Flash     |    32kB    |    256kB   |
+| SRAM      |     2kB    |      8kB   |
+| Clock     |    16MHz   |     16MHz  |
+| Dig pins  |    22      |     54     |
+| Price     | [€20](https://store.arduino.cc/arduino-nano) | [€35](https://store.arduino.cc/arduino-mega-2560-rev3) |
+| Clone     | [€3](https://www.aliexpress.com/item/32858764759.html) | [€8](https://www.aliexpress.com/item/4000163594025.html) |
+| Data sheet| [pdf](http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf) | [pdf](https://ww1.microchip.com/downloads/en/devicedoc/atmel-2549-8-bit-avr-microcontroller-atmega640-1280-1281-2560-2561_datasheet.pdf)|
 
 Note that there are different form factors for ATmega2560 based Arduino boards. The [classic](https://robotdyn.com/mega-2560-ch340g-atmega2560-16au-micro-usb-0g-00004031.html) one is big (54×102 mm²) because it has (largely) single header rows. The [compact](https://robotdyn.com/mega-2560-pro-embed-ch340g-atmega2560-16au-with-pinheaders.html) one (54×38 mm²) has double header rows. Note that boards come in 3V (instead of 5V) and also without USB (I prefer with USB, I believe they are always 5V). The clones with USB also come with varying "USB to UART" chips (CH340G, CH340C, CP2104) - but here I don't have a preference. Also, boards come with and without soldered headers, I prefer non-soldered, because I want female headers.
 
@@ -858,6 +865,8 @@ I ordered a PCB at [JLCPCB](https://jlcpcb.com/) which are low priced and have g
 
 ![PCB real](2560shield.jpg)
 
+## 2A.2. Testing the shield
+
 I wrote a short sketch to test the hardware: [2560shield-hwtest](2560shield-hwtest). It configures all pins, wires EA (NOP) to DATA, starts clocking and forces a RST. Each clock ot prints the address, rw and data lines. This is the output.
 
 ```text
@@ -880,11 +889,31 @@ EAED r EA
 EAEE r EA
 ```
 
-The output is as expected: 2 internal clocks, 3 stack clock, load of reset vector (EAEA) and then executing NOPs (EA) from EAEA onwards. Note that the clock is rather slow: 100ms periods or 10 Hz. This works for 65C02, but not for the NMOS variants. 
+The output is as expected: 2 internal clocks, 3 stack clock, load of reset vector (EAEA) and then executing NOPs (EA) from EAEA onwards. Note that the clock is rather slow: 100ms periods or 10 Hz. This works for 65C02, but not for the NMOS variants. Also, it seems the 65C02 initializes the S register (stack pointer): the trace always pushes at 0100. I am a bit surprised to see Writes here - I thought the 6502 was patched to do reads for the pushes in the reset handling.
 
-I also wrote a sketch that uses the buttons and the LEDs: [2560shield-ctrl](2560shield-ctrl). The first button (SW0) functions as pause/continue (of the clock), the second one generates IRQ and the third one a RST. Note that the "pause" keeps the clock high. This works for 65C02, but not for the NMOS variants. This is a trace.
+Observe that the code does not use `pinMode` and `digitalWrite`, but rather directly accesses the hardware registers `DDR` (data direction register), `PORT` (write) and `PIN`. This makes the code faster (no need for the function call) especially, because the design of the PCB maps related pins to one "port".
 
-```text2560shield-ctrl
+This means that the code to read the data bus, which, on the Nano assembled individual bits
+
+```cpp
+  // Read data bus
+  uint16_t data=0 ;
+  data += digitalRead(PIN_DATA_0) << 0;
+  data += digitalRead(PIN_DATA_1) << 1;
+  ...
+  data += digitalRead(PIN_DATA_7) << 7;
+```
+
+is now reduced to one register access
+
+```cpp
+  data= PORTA
+```
+
+I also wrote a sketch that tests the buttons and the LEDs: [2560shield-ctrl](2560shield-ctrl). The first button (SW0) functions as pause/continue (of the clock), the second one generates IRQ and the third one a RST. Note that the "pause" keeps the clock high. This works for 65C02, but not for the NMOS variants. This is a trace.
+
+```text
+2560shield-ctrl
 
 but : init
 led : init
@@ -925,5 +954,83 @@ but : pause
 ```
 
 Again, looks good: the reset sequence at power-up, which is repeated when the RST is released. Also note the pause. The IRQ could not be tested, presumable the interrupts are disabled by default. We need to upgrade the sketch so that we can run a real program.
+
+## 2A.3 Memory
+
+It is time to let the Mega emulate ROM and RAM, just like we did with the Nano.
+See the sketch [2560shield-mem](2560shield-mem). I booted it and pressed and released SW1, which generates an IRQ.
+
+This is the trace `<--` is annotation by me.
+
+```text
+2560shield-mem
+
+but : init
+led : init
+mem : init
+
+0000 r EA
+0000 r EA
+0100 W 00
+01FF W 00
+01FE W 23
+FFFC r 00
+FFFD r 02
+0200 r 58 <-- CLI
+0201 r A9 <-- LDA #$00
+0201 r A9
+0202 r 00
+0203 r 85 <-- STA *$33
+0204 r 33
+0033 W 00
+0205 r 85 <-- STA *$44
+0206 r 44
+0044 W 00
+0207 r E6 <-- INC *$33
+0208 r 33
+0033 r 00
+0033 r 00
+0033 W 01 <-- 33 updated to 1
+0209 r 4C <-- JMP 0702
+020A r 07
+020B r 02
+0207 r E6 <-- INC *$33 
+0208 r 33
+0033 r 01
+0033 r 01
+0033 W 02 <-- 33 updated to 2
+0209 r 4C <-- JMP 0702
+020A r 07
+020B r 02
+0207 r E6  <-- INC *$33 
+0208 r 33
+0033 r 02
+but : IRQ asserted <-- but instruction not yet finished
+0033 r 02
+0033 W 03 <-- 33 updated to 3 (instruction finished)
+0209 r 4C <-- interrupt sequence (2 internal ticks)
+0209 r 4C
+01FD W 02 <-- interrupt sequence (push PCH PCL PSW)
+01FC W 09
+but : IRQ released
+01FB W 21
+FFFE r 00 <-- interrupt sequence (load IRQ vector)
+FFFF r 03
+0300 r E6 <-- INC *$44 ; interrupt service routine start 
+0301 r 44
+0044 r 00
+0044 r 00
+0044 W 01 <-- 44 updated to 1
+0302 r 40 <-- RTI 
+0303 r EA
+01FA r EA <-- POP PSW PCL PCH
+01FB r 21
+01FC r 09
+01FD r 02
+0209 r 4C <-- JMP 0702 ; back in main 
+020A r 07
+020B r 02
+0207 r E6
+```
 
 (end of doc)

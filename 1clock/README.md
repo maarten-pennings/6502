@@ -20,7 +20,7 @@ We will do the following experiments
 - [1.4. Clock - micro switch](#14-Clock---micro-switch) - Using a micro switch for manual clocking
 - [1.5. Clock - NE555](#15-Clock---NE555) - Using an NE555 for clocking
 - [1.6. Triple clock module](#16-Triple-clock-module) - A standard clock module
-- [1.7. The first module: a triple clock](#17-The-first-module-a-triple-clock) - The first PCB for our 6502 computer
+- [1A.1. The first module: a triple clock](#1A1-The-first-module-a-triple-clock) - The first PCB for our 6502 computer
 
 ## 1.1. Clock - crystal
 
@@ -341,9 +341,14 @@ Here is a prototype of my complete clock module.
 
 ![Clock selector breadboard](clockselect.jpg)
 
-## 1.7. The first module: a triple clock
+# 1A. Appendix
 
-Let's convert the prototype to a real PCB. 
+The chapters in the appendix where added later - when I started to develop some PCBs.
+
+
+## 1A.1. The first module: a triple clock
+
+Let's convert the [prototype](#16-Triple-clock-module) to a real PCB. 
 The schematic is available as [pdf](clock3-schematic.pdf), and also the [gerber](Gerber_clock3-pcb.zip) in case you want a copy.
 
 Some additions compared to the prototype:

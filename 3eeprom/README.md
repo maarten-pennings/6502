@@ -18,13 +18,13 @@ that explained how to make a programmer for it using a Nano.
 That seemed like a good way to go.
 
 We will do the following experiments
- - [3.1. EEPROM programmer](README.md#31-EEPROM-programmer) - Make our own EEPROM programmer with a Nano
- - [3.2. 6502 with EEPROM and Nano](README.md#32-6502-with-EEPROM-and-Nano) - Use a programmed EEPROM (6502+Nano)
- - [3.3. 6502 with EEPROM and oscillator](README.md#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
- - [3.4. Blinky](README.md#34-Blinky) - The "Hellow, world!" of embedded software: blinky
- - [3.5. EEPROM programmer V2](README.md#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
- - [3.6. EEPROM programmer V3](README.md#36-EEPROM-programmer-V3) - Adding support for 8k EEPROMs
- - [3.7. PCB](README.md#37-PCB) - Creating a PCB
+ - [3.1. EEPROM programmer](#31-EEPROM-programmer) - Make our own EEPROM programmer with a Nano
+ - [3.2. 6502 with EEPROM and Nano](#32-6502-with-EEPROM-and-Nano) - Use a programmed EEPROM (6502+Nano)
+ - [3.3. 6502 with EEPROM and oscillator](#33-6502-with-EEPROM-and-oscillator) - Use a programmed EEPROM (6502+oscillator)
+ - [3.4. Blinky](#34-Blinky) - The "Hellow, world!" of embedded software: blinky
+ - [3.5. EEPROM programmer V2](#35-EEPROM-programmer-V2) - Improving the EEPROM programmer
+ - [3.6. EEPROM programmer V3](#36-EEPROM-programmer-V3) - Adding support for 8k EEPROMs
+ - [3A.1. PCB](#3A1-PCB) - Creating a PCB
 
 
 ## 3.1. EEPROM programmer
@@ -524,7 +524,11 @@ Software improvements made for V3
 
 TODO ... photo breadboard ... schema demux ...
 
-## 3.7. PCB
+# 3A. Appendix
+
+The chapters in the appendix where added later - when I started to develop some PCBs.
+
+## 3A.1. PCB
 
 After completing the feasibility on the breadboard, I decided to make a real PCB.
 I used [easyeda](easyeda.com) to draw the [schematic](eeprom-programmer_schema.pdf).
