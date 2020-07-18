@@ -836,20 +836,94 @@ I made a [schematic](2560shield.pdf) (using the webtool [EasyEDA](https://easyed
 
 - I have connected every pin of the 6502 (the "slave") to a pin of the 2560 (the "master"). 
 - The exception being the power pins of the 6502: the GND pins are hardwired and the VCC pin is wired via a transistor (T1) to a pin of the 2560.
-- The power of the 2560 and the power of the 6502 (switched via the transistor) have their own signalling LEDs (LEDMPOW and LEDSPOW)
+- The power of the 2560 and the power of the 6502 (switched via the transistor) have their own signalling LEDs (LEDMPOW and LEDSPOW).
 - Even NC pins of the 6502 are connected to the 2560, because newer models of the 6502 (e.g. W65C02) have those pins connected.
 - To prevent short circuit (6502 outputs to 5V on the same pin where the 2560 outputs 0V) I have added 2k2 resistors on all pin-pin connections.
 - I have tried to order the connections "logically". I connected similar signals to one "port" of the 2560, and I connected the wires of one port in order. For example, all data lines of the 6502 go to port A of the 2560; D0 maps to PA0, D1 to PA1, and ... D7 to PA7.
 - I have also added an expansion connector (J1), which breaks-out all pins of the 6502.
 - There is also a small expansion header (J2) for power (5V, GND) and an even smaller expansion header (J3) that breaks out two pins of the 2560 (so that in an experiment, we can feed an external event to the 6502).
-- There are three general purpose LEDs (LED0, LED1, and LED2). Such a LED can be programmed to e.g. show the generated clock pulse (when it is slow), or act as an output pin (writes to 8000 could be mapped to a LED).
-- There are also three general purpose switches (SW0, SW1, and SW2). Such as switch can be programmed to give an IRQ or, for example, hand control the clock ticks.
+- There are three general purpose LEDs (LED0, LED1, and LED2). Such a LED can be programmed to e.g. show the generated clock pulse (when it is slow), or act as an output device for the 6502 (writes to 8000 could be mapped to a LED).
+- There are also three general purpose switches (SW0, SW1, and SW2). Such a switch can be programmed to give an IRQ or, for example, hand control the clock ticks.
 - The plan is that the 6502 gets a ZIF socket, and the 2560 mates with male/female headers.
 
-I planned to make a real shield: the 6502 on top of the 2560. But there were too many wires and too little space, so I didn't manage the routing. They are now side by side.
+I planned to make a real shield: the 6502 on top of the 2560. But there were too many wires and too little space, so I didn't manage the routing. They are now side by side:
 
-![PVB](2560shield.png)
+![PCB layout](2560shield.png)
 
-I ordered a PCB at [JLCPCB](https://jlcpcb.com/) which are low priced and have good quality (but prices are rising). If you want to also get some PCBs and want to save on routing, here are the [Gerber files](2560shield-gerber.zip).
+I ordered a PCB at [JLCPCB](https://jlcpcb.com/) which are low priced and have good quality (but prices are rising). If you want to also get some PCBs and want to save on routing, here are the [Gerber files](2560shield-gerber.zip). Now that I have it in use there are some possible improvements:
+
+- Maybe if I used the bigger (non "pro") version of the Mega2560 a real on-top shield would be possible.
+- Maybe I should have added a jumper for pin 1, so that it can be connected to either ground or D39. This way, the shield also supports the W65C02, which uses pin 1 as output instead of GND.
+- More buttons? Play/pause, single step, NMI, IRQ, RESET, device for 6502.
+
+![PCB real](2560shield.jpg)
+
+I wrote a short sketch to test the hardware: [2560shield-hwtest](2560shield-hwtest). It configures all pins, wires EA (NOP) to DATA, starts clocking and forces a RST. Each clock ot prints the address, rw and data lines. This is the output.
+
+```text
+2560shield-hwtest
+
+0000 r EA
+0000 r EA
+0100 W EA
+01FF W EA
+01FE W EA
+FFFC r EA
+FFFD r EA
+EAEA r EA
+EAEB r EA
+EAEB r EA
+EAEC r EA
+EAEC r EA
+EAED r EA
+EAED r EA
+EAEE r EA
+```
+
+The output is as expected: 2 internal clocks, 3 stack clock, load of reset vector (EAEA) and then executing NOPs (EA) from EAEA onwards. Note that the clock is rather slow: 100ms periods or 10 Hz. This works for 65C02, but not for the NMOS variants. 
+
+I also wrote a sketch that uses the buttons and the LEDs: [2560shield-control](2560shield-control). The first button (SW0) functions as pause/continue (of the clock), the second one generates IRQ and the third one a RST. Note that the "pause" keeps the clock high. This works for 65C02, but not for the NMOS variants. This is a trace.
+
+```text2560shield-ctrl
+
+but : init
+led : init
+
+0000 r EA
+0000 r EA
+0100 W EA
+01FF W EA
+01FE W EA
+FFFC r EA
+FFFD r EA
+EAEA r EA
+EAEB r EA
+EAEB r EA
+but : RST asserted
+EAEC r EA
+EAEC r EA
+EAEC r EA
+but : RST released
+EAEC r EA
+EAEC r EA
+01FD W EA
+01FC W EA
+01FB W EA
+FFFC r EA
+FFFD r EA
+EAEA r EA
+EAEB r EA
+but : pause
+but : continue
+EAEB r EA
+EAEC r EA
+EAEC r EA
+EAED r EA
+EAED r EA
+EAEE r EA
+but : pause
+```
+
+Again, looks good: the reset sequence at power-up, which is repeated when the RST is released. Also note the pause. The IRQ could not be tested, presumable the interrupts are disabled by default. We need to upgrade the sketch so that we can run a real program.
 
 (end of doc)
