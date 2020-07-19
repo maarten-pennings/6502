@@ -1,4 +1,13 @@
-// 2560shield-mem.ino - A memory based prog, SW0 is pause, SW1 IRQ, and SW2 is reset
+// 2560shield-prog.ino - Full command driven 6502 shield
+
+#include "isa.h"
+#include "cmd.h"
+#include "cmdman.h"
+#include "cmdread.h"
+#include "cmdwrite.h"
+#include "cmddasm.h"
+#include "cmdasm.h"
+#include "cmdprog.h"
 
 // Pins on the MEGA256 and where they are connected to on the 6502.
 // Bare number is digital pin, so 15 means D15.
@@ -85,14 +94,14 @@ void led_tgl(int leds) {
 // MEM ================================================
 
 #define MEM_SIZE 1024
-
+const uint16_t mem_size= MEM_SIZE;
 uint8_t mem[MEM_SIZE];
 
 void mem_init() {
   // Fill entire memory with NOP
-  for(int i=0; i<MEM_SIZE; i++ ) mem[i]=0xEA; // NOP
+  for(uint16_t addr=0; addr<MEM_SIZE; addr++ ) mem[addr]=0xEA; // NOP
 
-  // RAM is preloaded with a simple programm
+  // RAM is preloaded with a simple program: after zeroing 0033 and 0022, it steps 0033 in a loop
   //   https://www.masswerk.at/6502/assembler.html
   // * = $0200
   mem[0x3fc]= 0x00;
@@ -106,9 +115,9 @@ void mem_init() {
   // 0203        STA *$33        85 33
   mem[0x203]= 0x85;
   mem[0x204]= 0x33;
-  // 0205        STA *$44        85 44
+  // 0205        STA *$22        85 22
   mem[0x205]= 0x85;
-  mem[0x206]= 0x44;
+  mem[0x206]= 0x22;
   // 0207 LOOP   
   // 0207        INC *$33        E6 33
   mem[0x207]= 0xE6;
@@ -118,14 +127,14 @@ void mem_init() {
   mem[0x20A]= 0x07;
   mem[0x20B]= 0x02;
 
-  // The RAM is also preloaded with an ISR
+  // The RAM is also preloaded with an ISR: it steps 0022
   // * = $0300
   mem[0x3fe]= 0x00;
   mem[0x3ff]= 0x03;
 
-  // 0300        INC *$44        E6 44
+  // 0300        INC *$22        E6 22
   mem[0x300]= 0xE6;
-  mem[0x301]= 0x44;
+  mem[0x301]= 0x22;
   // 0302        RTI             40
   mem[0x302]= 0x40;
 
@@ -142,19 +151,7 @@ uint8_t  mem_read(uint16_t addr) {
 
 // MAIN ===============================================
 
-#define SPEED_PERIOD_MS 100
-uint32_t speed_last;
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println();
-  Serial.println("2560shield-mem");
-  Serial.println();
-  but_init();
-  led_init();
-  mem_init();
-  Serial.println();
-
+void pins6502_init() {
   // ADDR pins: input
   DDRF = 0x00; // all pins input (LSB)
   DDRK = 0x00; // all pins input (MSB)
@@ -176,9 +173,9 @@ void setup() {
   // CLOCK pin: oscillating in loop()
   DDRC = 0x01; // pin 0 only pinMode(37, OUTPUT);
   PORTC= 0x01; // CLOCK HIGH
+}
 
-  // Reset
-  led_on(LED_2);  
+void reset6502() {
   PORTL = 0xF8;
   PORTC= 0x00; // CLOCK LOW
   delay(10);
@@ -189,12 +186,43 @@ void setup() {
   PORTC= 0x01; // CLOCK HIGH
   delay(10);
   PORTL = 0xFC;
-  led_off(LED_2);  
-
-  speed_last= millis();
 }
 
-int pause=0;
+void cmd_init() {
+  cmd_begin();
+  // Register in alphabetical order
+  cmdasm_register();  
+  cmddasm_register();  
+  cmdecho_register();
+  cmdhelp_register();
+  cmdman_register();
+  cmdprog_register();
+  cmdread_register(); 
+  cmdwrite_register();
+  
+}
+
+void banner() {
+  // http://patorjk.com/software/taag/#p=display&f=Big&t=isa6502                     
+  Serial.println( );
+  Serial.println( F("                         __ _____  ___ ___  ") );
+  Serial.println( F("                        / /| ____|/ _ \\__ \\ ") );
+  Serial.println( F(" _ __  _ __ ___   __ _ / /_| |__ | | | | ) |") );
+  Serial.println( F("| '_ \\| '__/ _ \\ / _` |  _ \\___ \\| | | |/ / ") );
+  Serial.println( F("| |_) | | | (_) | (_| | (_) |__) | |_| / /_ ") );
+  Serial.println( F("|  __/|_|  \\___/ \\__, |\\___/____/ \\___/____|") );
+  Serial.println( F("| |               __/ |                     ") );
+  Serial.println( F("|_|              |___/                      ") );
+  Serial.println();
+  Serial.print( F("Welcome to isa6502prog, using is6502 lib V") ); Serial.println(ISA_VERSION);
+  Serial.println( );
+  Serial.println( F("Type 'help' for help") );
+}
+
+
+#define SPEED_PERIOD_MS 100
+uint32_t speed_last;
+int pause;
 
 void control() {
   if( but_wentdown(BUT_0) ) {
@@ -231,8 +259,29 @@ void control() {
   }
 }
 
+void setup() {
+  Serial.begin(115200);
+  banner();
+  led_init();
+  but_init();
+  pins6502_init();
+  mem_init();
+  cmd_init();
+  Serial.println();
+  
+  speed_last= millis();
+  pause= 0;
+  reset6502();
+}
+
 void loop() {
+  // Are buttons pressed?
   if( but_scan() ) control();
+
+  // Feed command interpreter with chars from serial, if there are any
+  cmd_pollserial(); 
+
+  // Give the 6502 clock ticks
   if( !pause && millis()-speed_last>SPEED_PERIOD_MS) {
     char buf[16];
     PORTC= 0x00; // CLOCK LOW
@@ -255,4 +304,5 @@ void loop() {
     snprintf(buf,sizeof buf,"%04X %c %02X\n",addr,rnw?'r':'W',data); Serial.print(buf);
     speed_last= millis();
   }
+  
 }
