@@ -369,8 +369,27 @@ Some additions compared to the prototype:
   The CLK line (from the top-level OR) also drives a LED.
   I used a spare AND to drive the outgoing line.
 
-The is the virtual PCB
+This is the virtual PCB
 
 ![Virtual PCB](clock3-pcb.png)
+
+This is the actual PCB
+
+![Actual PCB](clock3-pcb2.jpg)
+
+and here with components mounted
+
+![PCB with components](clock3-pcb3.jpg)
+
+I found two flaws:
+
+- The cap on the clock output is needed. I soldered a 1nF at the bottom of the PCB between GND and CLK.
+- I made a mistake: I added a pull-down (R16) on the output of nHLT inverter. That should have been a pull-up on nHLT. So, I did not mount R16, and I did add a 10k between 5V and nHLT.
+
+Both fixes can be seen here:
+
+![PCB fixes](clock3-pcb4.jpg)
+
+
 
 (end of doc)
