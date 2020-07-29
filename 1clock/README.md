@@ -19,8 +19,8 @@ We will do the following experiments
 - [1.3. Clock - Nano](#13-Clock---Nano) - Using an Arduino Nano for clocking
 - [1.4. Clock - micro switch](#14-Clock---micro-switch) - Using a micro switch for manual clocking
 - [1.5. Clock - NE555](#15-Clock---NE555) - Using an NE555 for clocking
-- [1.6. Triple clock module](#16-Triple-clock-module) - A standard clock module
-- [1A.1. The first module: a triple clock](#1A1-The-first-module-a-triple-clock) - The first PCB for our 6502 computer
+- [1A.1. Triple clock module](#1A1-Triple-clock-module) - A standard clock module
+- [1A.2. The triple clock module PCB](#1A2-The-triple-clock-module-PCB) - The first PCB for our 6502 computer
 
 ## 1.1. Clock - crystal
 
@@ -325,9 +325,13 @@ This NE555 circuit was added to the breadboard of [1.4.](#14-Clock---micro-switc
 > I like slow, but 6.5 seconds per tick is a bit overdone. 
 > So I settled on **C of 2.2µF**, this gives a range of 4.6ms..3s (220Hz..0.33Hz).
 
-## 1.6. Triple clock module
+# 1A. Appendix
 
-For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the micro switch single-step per press), _variable_ (the NE555 with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz oscillator).
+The chapters in the appendix where added later - when I started to develop some PCBs.
+
+## 1A.1. Triple clock module
+
+For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the [micro switch](#14-Clock---micro-switch) single-step per press), _variable_ (the [NE555](#15-Clock---NE555) with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz [oscillator](#12-Clock---oscillator)).
 
 We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279). Three latches are used in the selector: one for each switch (SWMAN, SWVAR, SWNOM) - the fourth latch is used for the [hand micro switch](#14-Clock---micro-switch). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
 
@@ -341,15 +345,13 @@ Here is a prototype of my complete clock module.
 
 ![Clock selector breadboard](clockselect.jpg)
 
-# 1A. Appendix
 
-The chapters in the appendix where added later - when I started to develop some PCBs.
-
-
-## 1A.1. The first module: a triple clock
+## 1A.2. The triple clock module PCB
 
 Let's convert the [prototype](#16-Triple-clock-module) to a real PCB. 
-The schematic is available as [pdf](clock3-schematic.pdf), and also the [gerber](Gerber_clock3-pcb.zip) in case you want a copy.
+
+ - The schematic is available as [pdf](clock3-schematic.pdf).
+ - There is also a [gerber](Gerber_clock3-pcb.zip) in case you want an exact copy.
 
 Some additions compared to the prototype:
 
