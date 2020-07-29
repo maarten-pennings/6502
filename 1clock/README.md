@@ -331,7 +331,7 @@ The chapters in the appendix where added later - when I started to develop some 
 
 ## 1A.1. Triple clock module
 
-For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the [micro switch](#14-Clock---micro-switch) single-step per press), _variable_ (the [NE555](#15-Clock---NE555) with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz [oscillator](#12-Clock---oscillator)).
+For my "end-product", I would like a 6502 computer with three clocks: _manual_ (the [micro switch](#14-Clock---micro-switch) single-step per press), _variable_ (the [NE555](#15-Clock---NE555) with the potentiometer that regulates the frequency), and _nominal_ (the canned 1MHz [oscillator](#12-Clock---oscillator)). It is inspired by [Ben Eater's clock module](https://eater.net/8bit/clock).
 
 We need a selector with three states (manual, variable, nominal), but the transitions need to be debounced. I decide to take a quad SR latch (74279). Three latches are used in the selector: one for each switch (SWMAN, SWVAR, SWNOM) - the fourth latch is used for the [hand micro switch](#14-Clock---micro-switch). Only one latch at a time will be "set", indicating which of the three clock sources is selected. The output of the latches is routed to three LEDs (LEDMAN, LEDVAR, LEDNOM) to give feedback on the state of the selector. The selection part of the circuit is on the left hand side of below schematics. One final detail, the triple throw switch (SWDFT) selects which state is selected on power-up.
 
