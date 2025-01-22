@@ -999,7 +999,7 @@ FFFD r 02
 0033 r 01
 0033 r 01
 0033 W 02 <-- 33 updated to 2
-0209 r 4C <-- JMP 0702
+0209 r 4C <-- JMP 0207
 020A r 07
 020B r 02
 0207 r E6  <-- INC *$33 
@@ -1027,7 +1027,7 @@ FFFF r 03
 01FB r 21
 01FC r 09
 01FD r 02
-0209 r 4C <-- JMP 0702 ; back in main 
+0209 r 4C <-- JMP 0207 ; back in main 
 020A r 07
 020B r 02
 0207 r E6
