@@ -546,5 +546,8 @@ I 3D printed some support for the LEDs so that they have the same height as the 
 ![LED stand](eeprom-programmer-ledstand.jpg)
 
 
+## 3A.2 The programmer
 
-TODO ... photo with components ... youtube? ...
+![EEPROM programmer](eeprom-programmer-top.jpg)
+
+![EEPROM programmer](eeprom-programmer-3D.jpg)
